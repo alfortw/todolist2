@@ -165,7 +165,7 @@ input[type="checkbox"] {
 <textarea
 id="newTodo"
 rows="2"
-placeholder="Enterで追加"
+placeholder="Enterで改行"
 ></textarea>
 
 <button
@@ -253,15 +253,18 @@ save();
 render();
 }
 
-/* Enter追加 */
+/* Ctrl + Enter で追加 */
 
 document.getElementById("newTodo")
-.addEventListener("keydown",e=>{
+.addEventListener("keydown", e => {
 
-if(e.key==="Enter"&&!e.shiftKey){
-e.preventDefault();
-addTodo();
-}
+    if (e.key === "Enter" && e.ctrlKey) {
+
+        e.preventDefault();
+
+        addTodo();
+
+    }
 
 });
 
