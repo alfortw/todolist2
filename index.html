@@ -10,105 +10,221 @@
 
 <style>
 
-body{
+/* ===== 全体 ===== */
+
+body {
 margin:0;
 background:#f0ebf8;
 font-family:'Roboto',sans-serif;
 font-size:16px;
 }
 
-.container{
+.container {
 max-width:640px;
 margin:0 auto;
 padding:12px;
 }
 
-.title-card{
+/* ===== タイトル ===== */
+
+.title-card {
 background:white;
 border-top:8px solid #673ab7;
 border-radius:8px;
 padding:16px;
-margin-bottom:8px;
+margin-bottom:12px;
 }
 
-.card{
+.title-card h1 {
+margin:0;
+font-size:22px;
+}
+
+/* ===== カード ===== */
+
+.section-card {
+
 background:white;
+
 border-radius:8px;
+
 padding:16px;
-margin-bottom:8px;
+
+margin-bottom:12px;
+
+box-shadow:0 1px 2px rgba(0,0,0,0.1);
+
 }
 
-textarea{
-width:100%;
-font-size:16px;
-border:none;
-border-bottom:1px solid #dadce0;
-resize:none;
-overflow:hidden;
-min-height:48px;
-}
+/* ===== セクション ===== */
 
-.filter-select,
-.category-select{
-margin-top:8px;
-font-size:16px;
-height:40px;
-width:100%;
-}
+.section-header {
 
-button{
-height:44px;
-padding:0 18px;
-font-size:16px;
-border-radius:6px;
-border:none;
-margin-top:8px;
-}
+font-size:18px;
 
-.btn-primary{background:#673ab7;color:white;}
-.btn-red{background:#d93025;color:white;}
-.btn-green{background:#188038;color:white;}
-.btn-gray{background:#9aa0a6;color:white;}
-
-.section-title{
-font-size:16px;
 font-weight:500;
-margin-top:16px;
+
+margin-bottom:8px;
+
 }
 
-.todo-list{
-display:flex;
-flex-direction:column;
-gap:8px;
+.section-divider {
+
+height:1px;
+
+background:#e0e0e0;
+
+margin-bottom:12px;
+
 }
 
-.todo-card{
-background:white;
-border-radius:8px;
-padding:12px;
-display:flex;
-gap:12px;
-align-items:flex-start;
-border-left:6px solid transparent;
-}
+/* ===== textarea ===== */
 
-.cat-work{border-left-color:#1a73e8;}
-.cat-home{border-left-color:#188038;}
-.cat-shop{border-left-color:#f29900;}
-.cat-important{border-left-color:#d93025;}
+textarea {
 
-.todo-text{
-flex:1;
-white-space:pre-wrap;
-}
+width:100%;
 
-.edit-textarea{
-flex:1;
 font-size:16px;
+
 border:none;
-border-bottom:2px solid #673ab7;
+
+border-bottom:1px solid #dadce0;
+
 resize:none;
+
 overflow:hidden;
+
+min-height:48px;
+
+}
+
+textarea:focus {
+
+outline:none;
+
+border-bottom:2px solid #673ab7;
+
+}
+
+/* ===== モダンプルダウン ===== */
+
+select {
+
+width:100%;
+
+font-size:16px;
+
+padding:10px 8px;
+
+border:none;
+
+border-bottom:1px solid #dadce0;
+
+background:white;
+
+appearance:none;
+
+background-image:
+url("data:image/svg+xml;utf8,<svg fill='%235f6368' height='24' viewBox='0 0 24 24' width='24'><path d='M7 10l5 5 5-5z'/></svg>");
+
+background-repeat:no-repeat;
+
+background-position:right 8px center;
+
+margin-top:8px;
+
+}
+
+select:focus {
+
+outline:none;
+
+border-bottom:2px solid #673ab7;
+
+}
+
+/* ===== ボタン ===== */
+
+button {
+
+height:44px;
+
+padding:0 18px;
+
+font-size:16px;
+
+border-radius:6px;
+
+border:none;
+
+margin-top:10px;
+
+}
+
+.btn-primary {background:#673ab7;color:white;}
+.btn-red {background:#d93025;color:white;}
+.btn-green {background:#188038;color:white;}
+.btn-gray {background:#9aa0a6;color:white;}
+
+/* ===== Todo ===== */
+
+.todo-list {
+
+display:flex;
+
+flex-direction:column;
+
+gap:8px;
+
+}
+
+.todo-card {
+
+background:white;
+
+border-radius:8px;
+
+padding:12px;
+
+display:flex;
+
+gap:12px;
+
+align-items:flex-start;
+
+border-left:6px solid transparent;
+
+}
+
+/* カテゴリ色 */
+
+.cat-work {border-left-color:#1a73e8;}
+.cat-home {border-left-color:#188038;}
+.cat-shop {border-left-color:#f29900;}
+.cat-important {border-left-color:#d93025;}
+
+.todo-text {
+
+flex:1;
+
+white-space:pre-wrap;
+
+}
+
+.edit-textarea {
+
+flex:1;
+
+font-size:16px;
+
+border:none;
+
+border-bottom:2px solid #673ab7;
+
+resize:none;
+
+overflow:hidden;
+
 }
 
 </style>
@@ -120,10 +236,15 @@ overflow:hidden;
 
 <div class="title-card">
 <h1>Todoリスト</h1>
-<p>ダブルタップで編集</p>
 </div>
 
-<div class="card">
+<!-- 入力 -->
+
+<div class="section-card">
+
+<div class="section-header">
+新しいTodo
+</div>
 
 <textarea
 id="newTodo"
@@ -131,7 +252,7 @@ rows="1"
 placeholder="Enterで改行"
 ></textarea>
 
-<select id="category" class="category-select">
+<select id="category">
 
 <option value="">カテゴリなし</option>
 <option value="work">仕事</option>
@@ -141,18 +262,25 @@ placeholder="Enterで改行"
 
 </select>
 
-<button class="btn-primary"
+<button
+class="btn-primary"
 onclick="addTodo()">
 追加
 </button>
 
 </div>
 
+<!-- フィルター -->
+
+<div class="section-card">
+
+<div class="section-header">
+表示カテゴリ
+</div>
+
 <select
 id="filterCategory"
-class="filter-select"
-onchange="render()"
->
+onchange="render()">
 
 <option value="all">すべて表示</option>
 <option value="work">仕事</option>
@@ -162,11 +290,19 @@ onchange="render()"
 
 </select>
 
-<div class="section-title">Todo</div>
+</div>
+
+<!-- Todo -->
+
+<div class="section-card">
+
+<div class="section-header">
+Todo
+</div>
+
+<div class="section-divider"></div>
 
 <div id="todoList" class="todo-list"></div>
-
-<div>
 
 <button class="btn-red"
 onclick="deleteChecked('todo')">
@@ -185,9 +321,29 @@ onclick="clearChecks('todo')">
 
 </div>
 
-<div class="section-title">完了リスト</div>
+<!-- 完了 -->
+
+<div class="section-card">
+
+<div class="section-header">
+完了リスト
+</div>
+
+<div class="section-divider"></div>
 
 <div id="doneList" class="todo-list"></div>
+
+<button class="btn-red"
+onclick="deleteChecked('done')">
+削除
+</button>
+
+<button class="btn-gray"
+onclick="clearChecks('done')">
+解除
+</button>
+
+</div>
 
 </div>
 
@@ -229,7 +385,9 @@ const textarea=document.getElementById("newTodo");
 textarea.addEventListener("input",()=>{
 
 textarea.style.height="auto";
-textarea.style.height=textarea.scrollHeight+"px";
+
+textarea.style.height=
+textarea.scrollHeight+"px";
 
 });
 
@@ -237,13 +395,17 @@ textarea.style.height=textarea.scrollHeight+"px";
 
 function addTodo(){
 
-if(!textarea.value.trim())return;
+if(!textarea.value.trim()) return;
 
 todos.push({
+
 text:textarea.value,
+
 checked:false,
+
 category:
 document.getElementById("category").value
+
 });
 
 textarea.value="";
@@ -261,14 +423,15 @@ function render(){
 const filter=
 document.getElementById("filterCategory").value;
 
-renderList("todoList",todos,true,filter);
-renderList("doneList",dones,false,filter);
+renderList("todoList",todos,filter);
+renderList("doneList",dones,filter);
 
 }
 
-function renderList(id,list,isTodo,filter){
+function renderList(id,list,filter){
 
-const container=document.getElementById(id);
+const container=
+document.getElementById(id);
 
 container.innerHTML="";
 
@@ -280,7 +443,7 @@ if(filter==="all") return true;
 return item.category===filter;
 
 })
-.forEach((item,index)=>{
+.forEach(item=>{
 
 const card=document.createElement("div");
 
@@ -298,6 +461,7 @@ checkbox.checked=item.checked;
 checkbox.onchange=()=>{
 
 item.checked=checkbox.checked;
+
 save();
 
 };
@@ -310,7 +474,7 @@ text.className="todo-text";
 
 text.textContent=item.text;
 
-/* ダブルタップ編集 */
+/* 編集 */
 
 text.ondblclick=()=>{
 
@@ -318,7 +482,7 @@ startEdit(text,item);
 
 };
 
-/* スマホダブルタップ */
+/* スマホ */
 
 let tapCount=0;
 
@@ -366,12 +530,16 @@ textarea.focus();
 /* 自動拡張 */
 
 textarea.style.height="auto";
-textarea.style.height=textarea.scrollHeight+"px";
+
+textarea.style.height=
+textarea.scrollHeight+"px";
 
 textarea.addEventListener("input",()=>{
 
 textarea.style.height="auto";
-textarea.style.height=textarea.scrollHeight+"px";
+
+textarea.style.height=
+textarea.scrollHeight+"px";
 
 });
 
@@ -423,13 +591,15 @@ function deleteChecked(type){
 
 if(type==="todo"){
 
-todos=todos.filter(i=>!i.checked);
+todos=
+todos.filter(i=>!i.checked);
 
 }
 
 if(type==="done"){
 
-dones=dones.filter(i=>!i.checked);
+dones=
+dones.filter(i=>!i.checked);
 
 }
 
@@ -438,7 +608,7 @@ render();
 
 }
 
-/* チェック解除 */
+/* 解除 */
 
 function clearChecks(type){
 
