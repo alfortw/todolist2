@@ -2,150 +2,110 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Todoリスト</title>
 
-<style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
-/* Google Forms風ベース */
+<style>
 
 body {
     margin: 0;
     background: #f0ebf8;
-    font-family: Roboto, Arial, sans-serif;
-    font-size: 14px;
-    color: #202124;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 16px;
 }
-
-/* レイアウト */
 
 .container {
     max-width: 640px;
-    margin: 40px auto;
+    margin: 0 auto;
+    padding: 12px;
 }
 
-/* タイトルカード */
+/* タイトル */
 
 .title-card {
     background: white;
     border-top: 8px solid #673ab7;
     border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    padding: 16px;
+    margin-bottom: 8px;
 }
 
 .title-card h1 {
-    font-size: 24px;
+    font-size: 22px;
     margin: 0;
 }
 
 .title-card p {
-    margin-top: 6px;
-    color: #5f6368;
     font-size: 14px;
+    color: #5f6368;
 }
 
-/* 入力カード */
+/* 入力 */
 
-.input-card {
+.card {
     background: white;
     border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    padding: 16px;
+    margin-bottom: 8px;
 }
-
-/* textarea */
 
 textarea {
     width: 100%;
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    resize: vertical;
-    box-sizing: border-box;
+    font-size: 16px;
+    border: none;
+    border-bottom: 1px solid #dadce0;
 }
 
 textarea:focus {
     outline: none;
-    border-color: #673ab7;
+    border-bottom: 2px solid #673ab7;
 }
 
 /* ボタン */
 
 button {
-    height: 36px;
-    padding: 0 16px;
-    border-radius: 4px;
+    height: 44px;
+    padding: 0 18px;
+    font-size: 16px;
+    border-radius: 6px;
     border: none;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+    margin-top: 8px;
 }
 
-.btn-primary {
-    background: #673ab7;
-    color: white;
-}
+.btn-primary { background:#673ab7;color:white; }
+.btn-red { background:#d93025;color:white; }
+.btn-green { background:#188038;color:white; }
+.btn-gray { background:#9aa0a6;color:white; }
 
-.btn-primary:hover {
-    background: #5e35b1;
-}
-
-.btn-red {
-    background: #d93025;
-    color: white;
-}
-
-.btn-green {
-    background: #188038;
-    color: white;
-}
-
-.btn-gray {
-    background: #9aa0a6;
-    color: white;
-}
-
-.button-group {
-    margin-top: 12px;
-    margin-bottom: 24px;
-}
-
-.button-group button {
-    margin-right: 8px;
-}
-
-/* セクションタイトル */
+/* セクション */
 
 .section-title {
     font-size: 16px;
     font-weight: 500;
-    margin-top: 24px;
+    margin-top: 16px;
 }
 
-/* Todoカード */
+/* Todo */
 
 .todo-list {
-    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .todo-card {
     background: white;
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
     border: 1px solid #dadce0;
+    padding: 12px;
     display: flex;
-    align-items: flex-start;
     gap: 12px;
-
-    transition: 0.2s;
-}
-
-.todo-card:hover {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    align-items: flex-start;
+    transition: 0.15s;
+    position: relative;
 }
 
 .todo-card.checked {
@@ -153,117 +113,107 @@ button {
     background: #f3e8ff;
 }
 
-/* チェックボックス */
+/* スワイプ背景 */
+
+.swipe-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    z-index: 0;
+}
+
+.swipe-left {
+    background: #d93025;
+}
+
+.swipe-right {
+    background: #188038;
+}
+
+.todo-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
 
 input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin-top: 2px;
+    width: 22px;
+    height: 22px;
 }
-
-/* テキスト */
 
 .todo-text {
-    white-space: pre-wrap;
     flex: 1;
-}
-
-/* ドラッグ */
-
-.dragging {
-    opacity: 0.5;
+    white-space: pre-wrap;
 }
 
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<!-- タイトル -->
-
 <div class="title-card">
-
 <h1>Todoリスト</h1>
-
-<p>ドラッグして並び替え可能</p>
-
+<p>右スワイプ＝完了 / 左スワイプ＝削除</p>
 </div>
 
-<!-- 入力 -->
-
-<div class="input-card">
+<div class="card">
 
 <textarea
 id="newTodo"
-rows="3"
-placeholder="Enterで追加 / Shift+Enterで改行"
+rows="2"
+placeholder="Enterで追加"
 ></textarea>
 
-<div style="margin-top:12px;">
 <button
 class="btn-primary"
 onclick="addTodo()"
 >
 追加
 </button>
-</div>
 
 </div>
 
-<div class="section-title">
-Todo
-</div>
+<div class="section-title">Todo</div>
 
 <div id="todoList" class="todo-list"></div>
 
-<div class="button-group">
+<div>
 
-<button
-class="btn-red"
-onclick="deleteChecked('todo')"
->
+<button class="btn-red"
+onclick="deleteChecked('todo')">
 削除
 </button>
 
-<button
-class="btn-green"
-onclick="completeChecked()"
->
+<button class="btn-green"
+onclick="completeChecked()">
 完了
 </button>
 
-<button
-class="btn-gray"
-onclick="clearChecks('todo')"
->
-全チェック解除
+<button class="btn-gray"
+onclick="clearChecks('todo')">
+解除
 </button>
 
 </div>
 
-<div class="section-title">
-完了リスト
-</div>
+<div class="section-title">完了リスト</div>
 
 <div id="doneList" class="todo-list"></div>
 
-<div class="button-group">
+<div>
 
-<button
-class="btn-red"
-onclick="deleteChecked('done')"
->
+<button class="btn-red"
+onclick="deleteChecked('done')">
 削除
 </button>
 
-<button
-class="btn-gray"
-onclick="clearChecks('done')"
->
-全チェック解除
+<button class="btn-gray"
+onclick="clearChecks('done')">
+解除
 </button>
 
 </div>
@@ -272,288 +222,159 @@ onclick="clearChecks('done')"
 
 <script>
 
-/* データ */
+let todos=[];
+let dones=[];
 
-let todos = [];
-let dones = [];
-
-/* 保存 */
-
-function save() {
-
-localStorage.setItem("todos",
-JSON.stringify(todos));
-
-localStorage.setItem("dones",
-JSON.stringify(dones));
-
+function save(){
+localStorage.setItem("todos",JSON.stringify(todos));
+localStorage.setItem("dones",JSON.stringify(dones));
 }
 
-/* 読込 */
-
-function load() {
-
-todos =
-JSON.parse(localStorage.getItem("todos") || "[]");
-
-dones =
-JSON.parse(localStorage.getItem("dones") || "[]");
-
+function load(){
+todos=JSON.parse(localStorage.getItem("todos")||"[]");
+dones=JSON.parse(localStorage.getItem("dones")||"[]");
 render();
-
 }
 
-/* 追加 */
+function addTodo(){
 
-function addTodo() {
+const t=document.getElementById("newTodo");
 
-const textarea =
-document.getElementById("newTodo");
-
-const text = textarea.value;
-
-if (!text.trim()) return;
+if(!t.value.trim())return;
 
 todos.push({
-text: text,
-checked: false
+text:t.value,
+checked:false
 });
 
-textarea.value = "";
+t.value="";
 
 save();
 render();
-
 }
 
 /* Enter追加 */
 
-document
-.getElementById("newTodo")
-.addEventListener("keydown", e => {
+document.getElementById("newTodo")
+.addEventListener("keydown",e=>{
 
-if (e.key === "Enter" && !e.shiftKey) {
-
+if(e.key==="Enter"&&!e.shiftKey){
 e.preventDefault();
-
 addTodo();
-
 }
 
 });
 
-/* 描画 */
+function render(){
 
-function render() {
-
-renderList("todoList", todos);
-
-renderList("doneList", dones);
+renderList("todoList",todos,true);
+renderList("doneList",dones,false);
 
 }
 
-function renderList(id, list) {
+function renderList(id,list,isTodo){
 
-const container =
-document.getElementById(id);
+const container=document.getElementById(id);
 
-container.innerHTML = "";
+container.innerHTML="";
 
-list.forEach((item, index) => {
+list.forEach((item,index)=>{
 
-const card =
-document.createElement("div");
+const card=document.createElement("div");
+card.className="todo-card";
 
-card.className =
-"todo-card" +
-(item.checked ? " checked" : "");
+const content=document.createElement("div");
+content.className="todo-content";
 
-card.draggable = true;
+/* checkbox */
 
-/* Drag */
+const checkbox=document.createElement("input");
 
-card.addEventListener("dragstart", () => {
+checkbox.type="checkbox";
+checkbox.checked=item.checked;
 
-card.classList.add("dragging");
-
-});
-
-card.addEventListener("dragend", () => {
-
-card.classList.remove("dragging");
-
-save();
-
-});
-
-/* Checkbox */
-
-const checkbox =
-document.createElement("input");
-
-checkbox.type = "checkbox";
-
-checkbox.checked = item.checked;
-
-checkbox.onchange = () => {
-
-item.checked =
-checkbox.checked;
-
+checkbox.onchange=()=>{
+item.checked=checkbox.checked;
 save();
 render();
-
 };
 
-/* Text */
+/* text */
 
-const text =
-document.createElement("div");
+const text=document.createElement("div");
 
-text.className =
-"todo-text";
+text.className="todo-text";
+text.textContent=item.text;
 
-text.textContent =
-item.text;
+content.appendChild(checkbox);
+content.appendChild(text);
 
-card.appendChild(checkbox);
-card.appendChild(text);
+card.appendChild(content);
 
 container.appendChild(card);
 
-});
+/* スワイプ */
 
-/* 並び替え */
+let startX=0;
 
-container.addEventListener("dragover", e => {
+card.addEventListener("touchstart",e=>{
 
-e.preventDefault();
-
-const dragging =
-container.querySelector(".dragging");
-
-const afterElement =
-getDragAfterElement(container, e.clientY);
-
-if (afterElement == null) {
-
-container.appendChild(dragging);
-
-}
-else {
-
-container.insertBefore(
-dragging,
-afterElement
-);
-
-}
-
-updateOrder(container, list);
+startX=e.touches[0].clientX;
 
 });
 
-}
+card.addEventListener("touchmove",e=>{
 
-/* ドラッグ位置 */
+const dx=e.touches[0].clientX-startX;
 
-function getDragAfterElement(container, y) {
+card.style.transform=
+`translateX(${dx}px)`;
 
-const elements =
-[...container.querySelectorAll(".todo-card:not(.dragging)")];
+});
 
-return elements.reduce((closest, child) => {
+card.addEventListener("touchend",e=>{
 
-const box =
-child.getBoundingClientRect();
+const dx=e.changedTouches[0].clientX-startX;
 
-const offset =
-y - box.top - box.height / 2;
+/* 右スワイプ */
 
-if (
-offset < 0 &&
-offset > closest.offset
-) {
+if(dx>80 && isTodo){
 
-return {
-offset: offset,
-element: child
-};
-
-}
-else {
-
-return closest;
+item.checked=true;
+completeChecked();
 
 }
 
-},
-{ offset: Number.NEGATIVE_INFINITY }
-).element;
+/* 左スワイプ */
 
-}
+else if(dx<-80){
 
-/* 順序更新 */
-
-function updateOrder(container, list) {
-
-const cards =
-container.children;
-
-const newList = [];
-
-for (let i = 0; i < cards.length; i++) {
-
-const text =
-cards[i]
-.querySelector(".todo-text")
-.textContent;
-
-const item =
-list.find(x => x.text === text);
-
-if (item) {
-
-newList.push(item);
-
-}
-
-}
-
-if (container.id === "todoList") {
-
-todos = newList;
-
-}
-else {
-
-dones = newList;
-
-}
+list.splice(index,1);
 
 save();
+render();
 
 }
 
-/* 削除 */
+card.style.transform="";
 
-function deleteChecked(type) {
+});
 
-if (type === "todo") {
-
-todos =
-todos.filter(
-item => !item.checked
-);
+});
 
 }
 
-if (type === "done") {
+function deleteChecked(type){
 
-dones =
-dones.filter(
-item => !item.checked
-);
+if(type==="todo"){
+
+todos=todos.filter(i=>!i.checked);
+
+}
+
+if(type==="done"){
+
+dones=dones.filter(i=>!i.checked);
 
 }
 
@@ -562,50 +383,38 @@ render();
 
 }
 
-/* 完了 */
+function completeChecked(){
 
-function completeChecked() {
+const remain=[];
 
-const remaining = [];
+todos.forEach(i=>{
 
-todos.forEach(item => {
+if(i.checked){
 
-if (item.checked) {
+i.checked=false;
+dones.push(i);
 
-item.checked = false;
+}else{
 
-dones.push(item);
-
-}
-else {
-
-remaining.push(item);
+remain.push(i);
 
 }
 
 });
 
-todos = remaining;
+todos=remain;
 
 save();
 render();
 
 }
 
-/* チェック解除 */
+function clearChecks(type){
 
-function clearChecks(type) {
+let list=
+type==="todo"?todos:dones;
 
-let list =
-type === "todo"
-? todos
-: dones;
-
-list.forEach(item => {
-
-item.checked = false;
-
-});
+list.forEach(i=>i.checked=false);
 
 save();
 render();
