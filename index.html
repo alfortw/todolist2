@@ -10,124 +10,108 @@
 
 <style>
 
-/* ===== 全体 ===== */
-
-body {
-    margin: 0;
-    background: #f0ebf8;
-    font-family: 'Roboto', Arial, sans-serif;
-    font-size: 16px;
+body{
+margin:0;
+background:#f0ebf8;
+font-family:'Roboto',sans-serif;
+font-size:16px;
 }
 
-/* ===== レイアウト ===== */
-
-.container {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 12px;
+.container{
+max-width:640px;
+margin:0 auto;
+padding:12px;
 }
 
-/* ===== タイトル ===== */
-
-.title-card {
-    background: white;
-    border-top: 8px solid #673ab7;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 8px;
+.title-card{
+background:white;
+border-top:8px solid #673ab7;
+border-radius:8px;
+padding:16px;
+margin-bottom:8px;
 }
 
-.title-card h1 {
-    font-size: 22px;
-    margin: 0;
+.card{
+background:white;
+border-radius:8px;
+padding:16px;
+margin-bottom:8px;
 }
 
-.title-card p {
-    font-size: 14px;
-    color: #5f6368;
+textarea{
+width:100%;
+font-size:16px;
+border:none;
+border-bottom:1px solid #dadce0;
+resize:none;
+overflow:hidden;
+min-height:48px;
 }
 
-/* ===== 入力 ===== */
+/* フィルター */
 
-.card {
-    background: white;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 8px;
+.filter-select{
+margin-top:8px;
+font-size:16px;
+height:40px;
+width:100%;
 }
 
-/* ===== textarea（自動拡張対応） ===== */
+/* カテゴリ */
 
-textarea {
-    width: 100%;
-    font-size: 16px;
-    border: none;
-    border-bottom: 1px solid #dadce0;
-    resize: none;
-    overflow: hidden;
-    min-height: 48px;
+.category-select{
+margin-top:8px;
+font-size:16px;
+height:40px;
+width:100%;
 }
 
-textarea:focus {
-    outline: none;
-    border-bottom: 2px solid #673ab7;
+button{
+height:44px;
+padding:0 18px;
+font-size:16px;
+border-radius:6px;
+border:none;
+margin-top:8px;
 }
 
-/* ===== ボタン ===== */
+.btn-primary{background:#673ab7;color:white;}
+.btn-red{background:#d93025;color:white;}
+.btn-green{background:#188038;color:white;}
+.btn-gray{background:#9aa0a6;color:white;}
 
-button {
-    height: 44px;
-    padding: 0 18px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: none;
-    margin-top: 8px;
+.section-title{
+font-size:16px;
+font-weight:500;
+margin-top:16px;
 }
 
-.btn-primary { background:#673ab7;color:white; }
-.btn-red { background:#d93025;color:white; }
-.btn-green { background:#188038;color:white; }
-.btn-gray { background:#9aa0a6;color:white; }
-
-/* ===== セクション ===== */
-
-.section-title {
-    font-size: 16px;
-    font-weight: 500;
-    margin-top: 16px;
+.todo-list{
+display:flex;
+flex-direction:column;
+gap:8px;
 }
 
-/* ===== Todo ===== */
-
-.todo-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.todo-card{
+background:white;
+border-radius:8px;
+padding:12px;
+display:flex;
+gap:12px;
+align-items:flex-start;
+border-left:6px solid transparent;
 }
 
-.todo-card {
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #dadce0;
-    padding: 12px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-}
+/* カテゴリ色 */
 
-.todo-card.checked {
-    border-color: #673ab7;
-    background: #f3e8ff;
-}
+.cat-work{border-left-color:#1a73e8;}
+.cat-home{border-left-color:#188038;}
+.cat-shop{border-left-color:#f29900;}
+.cat-important{border-left-color:#d93025;}
 
-input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-}
-
-.todo-text {
-    flex: 1;
-    white-space: pre-wrap;
+.todo-text{
+flex:1;
+white-space:pre-wrap;
 }
 
 </style>
@@ -139,6 +123,7 @@ input[type="checkbox"] {
 
 <div class="title-card">
 <h1>Todoリスト</h1>
+<p>カテゴリで絞り込みできます</p>
 </div>
 
 <div class="card">
@@ -146,8 +131,18 @@ input[type="checkbox"] {
 <textarea
 id="newTodo"
 rows="1"
-placeholder=""
+placeholder="Enterで改行"
 ></textarea>
+
+<select id="category" class="category-select">
+
+<option value="">カテゴリなし</option>
+<option value="work">仕事</option>
+<option value="home">家事</option>
+<option value="shop">買い物</option>
+<option value="important">重要</option>
+
+</select>
 
 <button
 class="btn-primary"
@@ -157,6 +152,22 @@ onclick="addTodo()"
 </button>
 
 </div>
+
+<!-- フィルター追加 -->
+
+<select
+id="filterCategory"
+class="filter-select"
+onchange="render()"
+>
+
+<option value="all">すべて表示</option>
+<option value="work">仕事</option>
+<option value="home">家事</option>
+<option value="shop">買い物</option>
+<option value="important">重要</option>
+
+</select>
 
 <div class="section-title">Todo</div>
 
@@ -185,30 +196,14 @@ onclick="clearChecks('todo')">
 
 <div id="doneList" class="todo-list"></div>
 
-<div>
-
-<button class="btn-red"
-onclick="deleteChecked('done')">
-削除
-</button>
-
-<button class="btn-gray"
-onclick="clearChecks('done')">
-解除
-</button>
-
-</div>
-
 </div>
 
 <script>
 
-/* ===== データ ===== */
-
 let todos=[];
 let dones=[];
 
-/* ===== 保存 ===== */
+/* 保存 */
 
 function save(){
 
@@ -220,7 +215,7 @@ JSON.stringify(dones));
 
 }
 
-/* ===== 読込 ===== */
+/* 読込 */
 
 function load(){
 
@@ -234,66 +229,37 @@ render();
 
 }
 
-/* ===== textarea自動拡張 ===== */
+/* textarea自動拡張 */
 
-function autoResizeTextarea(){
+const textarea=document.getElementById("newTodo");
 
-const textarea=
-document.getElementById("newTodo");
+textarea.addEventListener("input",()=>{
 
 textarea.style.height="auto";
 
 textarea.style.height=
 textarea.scrollHeight+"px";
 
-}
-
-/* 入力時に高さ調整 */
-
-document
-.getElementById("newTodo")
-.addEventListener("input",()=>{
-
-autoResizeTextarea();
-
 });
 
-/* Ctrl+Enterで追加 */
-
-document
-.getElementById("newTodo")
-.addEventListener("keydown",e=>{
-
-if(e.key==="Enter" && e.ctrlKey){
-
-e.preventDefault();
-
-addTodo();
-
-}
-
-});
-
-/* ===== 追加 ===== */
+/* 追加 */
 
 function addTodo(){
-
-const textarea=
-document.getElementById("newTodo");
 
 const text=textarea.value;
 
 if(!text.trim())return;
 
+const category=
+document.getElementById("category").value;
+
 todos.push({
 text:text,
-checked:false
+checked:false,
+category:category
 });
 
 textarea.value="";
-
-/* 高さリセット */
-
 textarea.style.height="auto";
 
 save();
@@ -301,35 +267,43 @@ render();
 
 }
 
-/* ===== 描画 ===== */
+/* 描画 */
 
 function render(){
 
-renderList("todoList",todos);
-renderList("doneList",dones);
+const filter=
+document.getElementById("filterCategory").value;
+
+renderList("todoList",todos,true,filter);
+renderList("doneList",dones,false,filter);
 
 }
 
-function renderList(id,list){
+function renderList(id,list,isTodo,filter){
 
 const container=
 document.getElementById(id);
 
 container.innerHTML="";
 
-list.forEach(item=>{
+list
+.filter(item=>{
 
-const card=
-document.createElement("div");
+if(filter==="all") return true;
+
+return item.category===filter;
+
+})
+.forEach((item,index)=>{
+
+const card=document.createElement("div");
 
 card.className=
-"todo-card"+
-(item.checked?" checked":"");
+"todo-card cat-"+item.category;
 
 /* checkbox */
 
-const checkbox=
-document.createElement("input");
+const checkbox=document.createElement("input");
 
 checkbox.type="checkbox";
 
@@ -340,14 +314,12 @@ checkbox.onchange=()=>{
 item.checked=checkbox.checked;
 
 save();
-render();
 
 };
 
 /* text */
 
-const text=
-document.createElement("div");
+const text=document.createElement("div");
 
 text.className="todo-text";
 
@@ -362,28 +334,7 @@ container.appendChild(card);
 
 }
 
-/* ===== 操作 ===== */
-
-function deleteChecked(type){
-
-if(type==="todo"){
-
-todos=
-todos.filter(i=>!i.checked);
-
-}
-
-if(type==="done"){
-
-dones=
-dones.filter(i=>!i.checked);
-
-}
-
-save();
-render();
-
-}
+/* 完了 */
 
 function completeChecked(){
 
@@ -412,6 +363,29 @@ render();
 
 }
 
+/* 削除 */
+
+function deleteChecked(type){
+
+if(type==="todo"){
+
+todos=todos.filter(i=>!i.checked);
+
+}
+
+if(type==="done"){
+
+dones=dones.filter(i=>!i.checked);
+
+}
+
+save();
+render();
+
+}
+
+/* チェック解除 */
+
 function clearChecks(type){
 
 let list=
@@ -420,11 +394,8 @@ type==="todo"?todos:dones;
 list.forEach(i=>i.checked=false);
 
 save();
-render();
 
 }
-
-/* ===== 起動 ===== */
 
 load();
 
