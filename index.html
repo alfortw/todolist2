@@ -10,6 +10,8 @@
 
 <style>
 
+/* ===== 全体 ===== */
+
 body {
     margin: 0;
     background: #f0ebf8;
@@ -17,13 +19,15 @@ body {
     font-size: 16px;
 }
 
+/* ===== レイアウト ===== */
+
 .container {
     max-width: 640px;
     margin: 0 auto;
     padding: 12px;
 }
 
-/* タイトル */
+/* ===== タイトル ===== */
 
 .title-card {
     background: white;
@@ -43,7 +47,7 @@ body {
     color: #5f6368;
 }
 
-/* 入力 */
+/* ===== 入力 ===== */
 
 .card {
     background: white;
@@ -52,11 +56,16 @@ body {
     margin-bottom: 8px;
 }
 
+/* ===== textarea（自動拡張対応） ===== */
+
 textarea {
     width: 100%;
     font-size: 16px;
     border: none;
     border-bottom: 1px solid #dadce0;
+    resize: none;
+    overflow: hidden;
+    min-height: 48px;
 }
 
 textarea:focus {
@@ -64,7 +73,7 @@ textarea:focus {
     border-bottom: 2px solid #673ab7;
 }
 
-/* ボタン */
+/* ===== ボタン ===== */
 
 button {
     height: 44px;
@@ -80,7 +89,7 @@ button {
 .btn-green { background:#188038;color:white; }
 .btn-gray { background:#9aa0a6;color:white; }
 
-/* セクション */
+/* ===== セクション ===== */
 
 .section-title {
     font-size: 16px;
@@ -88,7 +97,7 @@ button {
     margin-top: 16px;
 }
 
-/* Todo */
+/* ===== Todo ===== */
 
 .todo-list {
     display: flex;
@@ -104,38 +113,11 @@ button {
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    transition: 0.15s;
-    position: relative;
 }
 
 .todo-card.checked {
     border-color: #673ab7;
     background: #f3e8ff;
-}
-
-/* スワイプ背景 */
-
-.swipe-bg {
-    position: absolute;
-    inset: 0;
-    border-radius: 8px;
-    z-index: 0;
-}
-
-.swipe-left {
-    background: #d93025;
-}
-
-.swipe-right {
-    background: #188038;
-}
-
-.todo-content {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    gap: 12px;
-    width: 100%;
 }
 
 input[type="checkbox"] {
@@ -157,15 +139,14 @@ input[type="checkbox"] {
 
 <div class="title-card">
 <h1>Todoリスト</h1>
-<p>右スワイプ＝完了 / 左スワイプ＝削除</p>
 </div>
 
 <div class="card">
 
 <textarea
 id="newTodo"
-rows="2"
-placeholder="Enterで改行"
+rows="1"
+placeholder=""
 ></textarea>
 
 <button
@@ -222,162 +203,180 @@ onclick="clearChecks('done')">
 
 <script>
 
+/* ===== データ ===== */
+
 let todos=[];
 let dones=[];
 
+/* ===== 保存 ===== */
+
 function save(){
-localStorage.setItem("todos",JSON.stringify(todos));
-localStorage.setItem("dones",JSON.stringify(dones));
+
+localStorage.setItem("todos",
+JSON.stringify(todos));
+
+localStorage.setItem("dones",
+JSON.stringify(dones));
+
 }
 
+/* ===== 読込 ===== */
+
 function load(){
-todos=JSON.parse(localStorage.getItem("todos")||"[]");
-dones=JSON.parse(localStorage.getItem("dones")||"[]");
+
+todos=
+JSON.parse(localStorage.getItem("todos")||"[]");
+
+dones=
+JSON.parse(localStorage.getItem("dones")||"[]");
+
 render();
+
 }
+
+/* ===== textarea自動拡張 ===== */
+
+function autoResizeTextarea(){
+
+const textarea=
+document.getElementById("newTodo");
+
+textarea.style.height="auto";
+
+textarea.style.height=
+textarea.scrollHeight+"px";
+
+}
+
+/* 入力時に高さ調整 */
+
+document
+.getElementById("newTodo")
+.addEventListener("input",()=>{
+
+autoResizeTextarea();
+
+});
+
+/* Ctrl+Enterで追加 */
+
+document
+.getElementById("newTodo")
+.addEventListener("keydown",e=>{
+
+if(e.key==="Enter" && e.ctrlKey){
+
+e.preventDefault();
+
+addTodo();
+
+}
+
+});
+
+/* ===== 追加 ===== */
 
 function addTodo(){
 
-const t=document.getElementById("newTodo");
+const textarea=
+document.getElementById("newTodo");
 
-if(!t.value.trim())return;
+const text=textarea.value;
+
+if(!text.trim())return;
 
 todos.push({
-text:t.value,
+text:text,
 checked:false
 });
 
-t.value="";
+textarea.value="";
+
+/* 高さリセット */
+
+textarea.style.height="auto";
 
 save();
 render();
+
 }
 
-/* Ctrl + Enter で追加 */
-
-document.getElementById("newTodo")
-.addEventListener("keydown", e => {
-
-    if (e.key === "Enter" && e.ctrlKey) {
-
-        e.preventDefault();
-
-        addTodo();
-
-    }
-
-});
+/* ===== 描画 ===== */
 
 function render(){
 
-renderList("todoList",todos,true);
-renderList("doneList",dones,false);
+renderList("todoList",todos);
+renderList("doneList",dones);
 
 }
 
-function renderList(id,list,isTodo){
+function renderList(id,list){
 
-const container=document.getElementById(id);
+const container=
+document.getElementById(id);
 
 container.innerHTML="";
 
-list.forEach((item,index)=>{
+list.forEach(item=>{
 
-const card=document.createElement("div");
-card.className="todo-card";
+const card=
+document.createElement("div");
 
-const content=document.createElement("div");
-content.className="todo-content";
+card.className=
+"todo-card"+
+(item.checked?" checked":"");
 
 /* checkbox */
 
-const checkbox=document.createElement("input");
+const checkbox=
+document.createElement("input");
 
 checkbox.type="checkbox";
+
 checkbox.checked=item.checked;
 
 checkbox.onchange=()=>{
+
 item.checked=checkbox.checked;
+
 save();
 render();
+
 };
 
 /* text */
 
-const text=document.createElement("div");
+const text=
+document.createElement("div");
 
 text.className="todo-text";
+
 text.textContent=item.text;
 
-content.appendChild(checkbox);
-content.appendChild(text);
-
-card.appendChild(content);
+card.appendChild(checkbox);
+card.appendChild(text);
 
 container.appendChild(card);
 
-/* スワイプ */
-
-let startX=0;
-
-card.addEventListener("touchstart",e=>{
-
-startX=e.touches[0].clientX;
-
-});
-
-card.addEventListener("touchmove",e=>{
-
-const dx=e.touches[0].clientX-startX;
-
-card.style.transform=
-`translateX(${dx}px)`;
-
-});
-
-card.addEventListener("touchend",e=>{
-
-const dx=e.changedTouches[0].clientX-startX;
-
-/* 右スワイプ */
-
-if(dx>80 && isTodo){
-
-item.checked=true;
-completeChecked();
-
-}
-
-/* 左スワイプ */
-
-else if(dx<-80){
-
-list.splice(index,1);
-
-save();
-render();
-
-}
-
-card.style.transform="";
-
-});
-
 });
 
 }
+
+/* ===== 操作 ===== */
 
 function deleteChecked(type){
 
 if(type==="todo"){
 
-todos=todos.filter(i=>!i.checked);
+todos=
+todos.filter(i=>!i.checked);
 
 }
 
 if(type==="done"){
 
-dones=dones.filter(i=>!i.checked);
+dones=
+dones.filter(i=>!i.checked);
 
 }
 
@@ -395,6 +394,7 @@ todos.forEach(i=>{
 if(i.checked){
 
 i.checked=false;
+
 dones.push(i);
 
 }else{
@@ -423,6 +423,8 @@ save();
 render();
 
 }
+
+/* ===== 起動 ===== */
 
 load();
 
