@@ -4,105 +4,264 @@
 <meta charset="UTF-8">
 <title>Todoリスト</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 
+/* Google Forms風ベース */
+
+body {
+    margin: 0;
+    background: #f0ebf8;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    color: #202124;
+}
+
+/* レイアウト */
+
+.container {
+    max-width: 640px;
+    margin: 40px auto;
+}
+
+/* タイトルカード */
+
+.title-card {
+    background: white;
+    border-top: 8px solid #673ab7;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.title-card h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.title-card p {
+    margin-top: 6px;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+/* 入力カード */
+
+.input-card {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* textarea */
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #673ab7;
+}
+
+/* ボタン */
+
+button {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.btn-primary {
+    background: #673ab7;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5e35b1;
+}
+
+.btn-red {
+    background: #d93025;
+    color: white;
+}
+
+.btn-green {
+    background: #188038;
+    color: white;
+}
+
+.btn-gray {
+    background: #9aa0a6;
+    color: white;
+}
+
+.button-group {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}
+
+.button-group button {
+    margin-right: 8px;
+}
+
+/* セクションタイトル */
+
+.section-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 24px;
+}
+
+/* Todoカード */
+
+.todo-list {
+    margin-top: 8px;
+}
+
+.todo-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #dadce0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    transition: 0.2s;
+}
+
+.todo-card:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.todo-card.checked {
+    border-color: #673ab7;
+    background: #f3e8ff;
+}
+
+/* チェックボックス */
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+/* テキスト */
+
+.todo-text {
+    white-space: pre-wrap;
+    flex: 1;
+}
+
+/* ドラッグ */
+
 .dragging {
-opacity: 0.5;
+    opacity: 0.5;
 }
 
 </style>
 
 </head>
 
-<body class="bg-gray-100 min-h-screen py-10">
+<body>
 
-<div class="max-w-2xl mx-auto">
+<div class="container">
 
 <!-- タイトル -->
 
-<div class="bg-white border-t-8 border-purple-600 rounded-lg shadow p-6 mb-6">
+<div class="title-card">
 
-<h1 class="text-2xl font-semibold">
-Todoリスト
-</h1>
+<h1>Todoリスト</h1>
 
-<p class="text-gray-500 text-sm mt-1">
-ドラッグして並び替え可能
-</p>
+<p>ドラッグして並び替え可能</p>
 
 </div>
 
 <!-- 入力 -->
 
-<div class="bg-white rounded-lg shadow p-6 mb-6">
+<div class="input-card">
 
 <textarea
 id="newTodo"
 rows="3"
 placeholder="Enterで追加 / Shift+Enterで改行"
-class="w-full border border-gray-300 rounded-md p-3 resize-y focus:ring-2 focus:ring-purple-500 focus:outline-none"
 ></textarea>
 
+<div style="margin-top:12px;">
 <button
+class="btn-primary"
 onclick="addTodo()"
-class="mt-4 px-5 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-500 transition"
 >
 追加
 </button>
+</div>
 
 </div>
 
-<h2 class="text-lg font-semibold text-gray-700 mb-2">
+<div class="section-title">
 Todo
-</h2>
+</div>
 
-<div id="todoList" class="space-y-4"></div>
+<div id="todoList" class="todo-list"></div>
 
-<div class="flex gap-2 mt-4 mb-10">
+<div class="button-group">
 
 <button
+class="btn-red"
 onclick="deleteChecked('todo')"
-class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-400"
 >
 削除
 </button>
 
 <button
+class="btn-green"
 onclick="completeChecked()"
-class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
 >
 完了
 </button>
 
 <button
+class="btn-gray"
 onclick="clearChecks('todo')"
-class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-300"
 >
 全チェック解除
 </button>
 
 </div>
 
-<h2 class="text-lg font-semibold text-gray-700 mb-2">
+<div class="section-title">
 完了リスト
-</h2>
+</div>
 
-<div id="doneList" class="space-y-4"></div>
+<div id="doneList" class="todo-list"></div>
 
-<div class="flex gap-2 mt-4">
+<div class="button-group">
 
 <button
+class="btn-red"
 onclick="deleteChecked('done')"
-class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-400"
 >
 削除
 </button>
 
 <button
+class="btn-gray"
 onclick="clearChecks('done')"
-class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-300"
 >
 全チェック解除
 </button>
@@ -113,8 +272,12 @@ class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-300"
 
 <script>
 
+/* データ */
+
 let todos = [];
 let dones = [];
+
+/* 保存 */
 
 function save() {
 
@@ -125,6 +288,8 @@ localStorage.setItem("dones",
 JSON.stringify(dones));
 
 }
+
+/* 読込 */
 
 function load() {
 
@@ -137,6 +302,8 @@ JSON.parse(localStorage.getItem("dones") || "[]");
 render();
 
 }
+
+/* 追加 */
 
 function addTodo() {
 
@@ -175,15 +342,17 @@ addTodo();
 
 });
 
+/* 描画 */
+
 function render() {
 
-renderList("todoList", todos, "todo");
+renderList("todoList", todos);
 
-renderList("doneList", dones, "done");
+renderList("doneList", dones);
 
 }
 
-function renderList(id, list, type) {
+function renderList(id, list) {
 
 const container =
 document.getElementById(id);
@@ -195,13 +364,11 @@ list.forEach((item, index) => {
 const card =
 document.createElement("div");
 
-card.draggable = true;
-
 card.className =
-"bg-white border rounded-lg shadow-sm p-4 flex items-start gap-4 transition hover:shadow-md " +
-(item.checked
-? "border-purple-500 bg-purple-50"
-: "border-gray-200");
+"todo-card" +
+(item.checked ? " checked" : "");
+
+card.draggable = true;
 
 /* Drag */
 
@@ -225,10 +392,8 @@ const checkbox =
 document.createElement("input");
 
 checkbox.type = "checkbox";
-checkbox.checked = item.checked;
 
-checkbox.className =
-"mt-1 w-5 h-5 accent-purple-600 transition";
+checkbox.checked = item.checked;
 
 checkbox.onchange = () => {
 
@@ -246,7 +411,7 @@ const text =
 document.createElement("div");
 
 text.className =
-"flex-1 whitespace-pre-wrap text-sm";
+"todo-text";
 
 text.textContent =
 item.text;
@@ -290,10 +455,12 @@ updateOrder(container, list);
 
 }
 
+/* ドラッグ位置 */
+
 function getDragAfterElement(container, y) {
 
 const elements =
-[...container.querySelectorAll("div:not(.dragging)")];
+[...container.querySelectorAll(".todo-card:not(.dragging)")];
 
 return elements.reduce((closest, child) => {
 
@@ -326,6 +493,8 @@ return closest;
 
 }
 
+/* 順序更新 */
+
 function updateOrder(container, list) {
 
 const cards =
@@ -336,7 +505,9 @@ const newList = [];
 for (let i = 0; i < cards.length; i++) {
 
 const text =
-cards[i].querySelector("div").textContent;
+cards[i]
+.querySelector(".todo-text")
+.textContent;
 
 const item =
 list.find(x => x.text === text);
@@ -364,6 +535,8 @@ save();
 
 }
 
+/* 削除 */
+
 function deleteChecked(type) {
 
 if (type === "todo") {
@@ -388,6 +561,8 @@ save();
 render();
 
 }
+
+/* 完了 */
 
 function completeChecked() {
 
@@ -416,6 +591,8 @@ save();
 render();
 
 }
+
+/* チェック解除 */
 
 function clearChecks(type) {
 
