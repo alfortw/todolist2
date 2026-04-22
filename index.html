@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Todoリスト</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+.dragging {
+opacity: 0.5;
+}
+
+</style>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen py-10">
+
+<div class="max-w-2xl mx-auto">
+
+<!-- タイトル -->
+
+<div class="bg-white border-t-8 border-purple-600 rounded-lg shadow p-6 mb-6">
+
+<h1 class="text-2xl font-semibold">
+Todoリスト
+</h1>
+
+<p class="text-gray-500 text-sm mt-1">
+ドラッグして並び替え可能
+</p>
+
+</div>
+
+<!-- 入力 -->
+
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+
+<textarea
+id="newTodo"
+rows="3"
+placeholder="Enterで追加 / Shift+Enterで改行"
+class="w-full border border-gray-300 rounded-md p-3 resize-y focus:ring-2 focus:ring-purple-500 focus:outline-none"
+></textarea>
+
+<button
+onclick="addTodo()"
+class="mt-4 px-5 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-500 transition"
+>
+追加
+</button>
+
+</div>
+
+<h2 class="text-lg font-semibold text-gray-700 mb-2">
+Todo
+</h2>
+
+<div id="todoList" class="space-y-4"></div>
+
+<div class="flex gap-2 mt-4 mb-10">
+
+<button
+onclick="deleteChecked('todo')"
+class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-400"
+>
+削除
+</button>
+
+<button
+onclick="completeChecked()"
+class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
+>
+完了
+</button>
+
+<button
+onclick="clearChecks('todo')"
+class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-300"
+>
+全チェック解除
+</button>
+
+</div>
+
+<h2 class="text-lg font-semibold text-gray-700 mb-2">
+完了リスト
+</h2>
+
+<div id="doneList" class="space-y-4"></div>
+
+<div class="flex gap-2 mt-4">
+
+<button
+onclick="deleteChecked('done')"
+class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-400"
+>
+削除
+</button>
+
+<button
+onclick="clearChecks('done')"
+class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-300"
+>
+全チェック解除
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let todos = [];
+let dones = [];
+
+function save() {
+
+localStorage.setItem("todos",
+JSON.stringify(todos));
+
+localStorage.setItem("dones",
+JSON.stringify(dones));
+
+}
+
+function load() {
+
+todos =
+JSON.parse(localStorage.getItem("todos") || "[]");
+
+dones =
+JSON.parse(localStorage.getItem("dones") || "[]");
+
+render();
+
+}
+
+function addTodo() {
+
+const textarea =
+document.getElementById("newTodo");
+
+const text = textarea.value;
+
+if (!text.trim()) return;
+
+todos.push({
+text: text,
+checked: false
+});
+
+textarea.value = "";
+
+save();
+render();
+
+}
+
+/* Enter追加 */
+
+document
+.getElementById("newTodo")
+.addEventListener("keydown", e => {
+
+if (e.key === "Enter" && !e.shiftKey) {
+
+e.preventDefault();
+
+addTodo();
+
+}
+
+});
+
+function render() {
+
+renderList("todoList", todos, "todo");
+
+renderList("doneList", dones, "done");
+
+}
+
+function renderList(id, list, type) {
+
+const container =
+document.getElementById(id);
+
+container.innerHTML = "";
+
+list.forEach((item, index) => {
+
+const card =
+document.createElement("div");
+
+card.draggable = true;
+
+card.className =
+"bg-white border rounded-lg shadow-sm p-4 flex items-start gap-4 transition hover:shadow-md " +
+(item.checked
+? "border-purple-500 bg-purple-50"
+: "border-gray-200");
+
+/* Drag */
+
+card.addEventListener("dragstart", () => {
+
+card.classList.add("dragging");
+
+});
+
+card.addEventListener("dragend", () => {
+
+card.classList.remove("dragging");
+
+save();
+
+});
+
+/* Checkbox */
+
+const checkbox =
+document.createElement("input");
+
+checkbox.type = "checkbox";
+checkbox.checked = item.checked;
+
+checkbox.className =
+"mt-1 w-5 h-5 accent-purple-600 transition";
+
+checkbox.onchange = () => {
+
+item.checked =
+checkbox.checked;
+
+save();
+render();
+
+};
+
+/* Text */
+
+const text =
+document.createElement("div");
+
+text.className =
+"flex-1 whitespace-pre-wrap text-sm";
+
+text.textContent =
+item.text;
+
+card.appendChild(checkbox);
+card.appendChild(text);
+
+container.appendChild(card);
+
+});
+
+/* 並び替え */
+
+container.addEventListener("dragover", e => {
+
+e.preventDefault();
+
+const dragging =
+container.querySelector(".dragging");
+
+const afterElement =
+getDragAfterElement(container, e.clientY);
+
+if (afterElement == null) {
+
+container.appendChild(dragging);
+
+}
+else {
+
+container.insertBefore(
+dragging,
+afterElement
+);
+
+}
+
+updateOrder(container, list);
+
+});
+
+}
+
+function getDragAfterElement(container, y) {
+
+const elements =
+[...container.querySelectorAll("div:not(.dragging)")];
+
+return elements.reduce((closest, child) => {
+
+const box =
+child.getBoundingClientRect();
+
+const offset =
+y - box.top - box.height / 2;
+
+if (
+offset < 0 &&
+offset > closest.offset
+) {
+
+return {
+offset: offset,
+element: child
+};
+
+}
+else {
+
+return closest;
+
+}
+
+},
+{ offset: Number.NEGATIVE_INFINITY }
+).element;
+
+}
+
+function updateOrder(container, list) {
+
+const cards =
+container.children;
+
+const newList = [];
+
+for (let i = 0; i < cards.length; i++) {
+
+const text =
+cards[i].querySelector("div").textContent;
+
+const item =
+list.find(x => x.text === text);
+
+if (item) {
+
+newList.push(item);
+
+}
+
+}
+
+if (container.id === "todoList") {
+
+todos = newList;
+
+}
+else {
+
+dones = newList;
+
+}
+
+save();
+
+}
+
+function deleteChecked(type) {
+
+if (type === "todo") {
+
+todos =
+todos.filter(
+item => !item.checked
+);
+
+}
+
+if (type === "done") {
+
+dones =
+dones.filter(
+item => !item.checked
+);
+
+}
+
+save();
+render();
+
+}
+
+function completeChecked() {
+
+const remaining = [];
+
+todos.forEach(item => {
+
+if (item.checked) {
+
+item.checked = false;
+
+dones.push(item);
+
+}
+else {
+
+remaining.push(item);
+
+}
+
+});
+
+todos = remaining;
+
+save();
+render();
+
+}
+
+function clearChecks(type) {
+
+let list =
+type === "todo"
+? todos
+: dones;
+
+list.forEach(item => {
+
+item.checked = false;
+
+});
+
+save();
+render();
+
+}
+
+load();
+
+</script>
+
+</body>
+</html>
