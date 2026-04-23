@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト - 期限・カテゴリ管理付</title>
+<title>Todoリスト - 全選択機能付</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
 body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:16px; color: #333; }
@@ -11,8 +11,11 @@ body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:
 .title-card { background:white; border-top:8px solid #673ab7; border-radius:8px; padding:16px; margin-bottom:12px; }
 .title-card h1 { margin:0; font-size:22px; }
 .section-card { background:white; border-radius:8px; padding:16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.1); }
-.section-header { font-size:18px; font-weight:500; margin-bottom:8px; }
+.section-header { font-size:18px; font-weight:500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .section-divider { height:1px; background:#e0e0e0; margin-bottom:12px; }
+
+/* 全選択ラベルのスタイル */
+.select-all-label { font-size: 13px; color: #666; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
 textarea, input[type="text"], input[type="date"], select { 
     width:100%; font-size:16px; border:none; border-bottom:1px solid #dadce0; outline: none; box-sizing: border-box; background:transparent;
@@ -63,7 +66,12 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     </div>
 
     <div class="section-card">
-        <div class="section-header">Todo</div>
+        <div class="section-header">
+            Todo
+            <label class="select-all-label">
+                <input type="checkbox" id="todoSelectAll" onchange="toggleAll('todo', this.checked)"> 全選択
+            </label>
+        </div>
         <div class="section-divider"></div>
         <div id="todoList" class="todo-list"></div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
@@ -73,7 +81,12 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     </div>
 
     <div class="section-card">
-        <div class="section-header">完了済み</div>
+        <div class="section-header">
+            完了済み
+            <label class="select-all-label">
+                <input type="checkbox" id="doneSelectAll" onchange="toggleAll('done', this.checked)"> 全選択
+            </label>
+        </div>
         <div class="section-divider"></div>
         <div id="doneList" class="todo-list"></div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
@@ -120,8 +133,22 @@ function save() {
     localStorage.setItem("todos", JSON.stringify(todos));
     localStorage.setItem("dones", JSON.stringify(dones));
     localStorage.setItem("categories", JSON.stringify(categories));
-    // 内部的な予備バックアップ
-    localStorage.setItem("todo_backup_temp", JSON.stringify({todos, dones, categories}));
+}
+
+// --- 一括操作ロジック ---
+function toggleAll(type, isChecked) {
+    const filter = document.getElementById("filterCategory").value;
+    let list = (type === 'todo') ? todos : dones;
+    
+    // 現在フィルタリングされている項目のみを対象にする
+    list.forEach(item => {
+        if (filter === "all" || item.category === filter) {
+            item.checked = isChecked;
+        }
+    });
+    
+    save();
+    render();
 }
 
 // --- カテゴリ管理 ---
@@ -194,24 +221,32 @@ function addTodo() {
 
 function render() {
     const filter = document.getElementById("filterCategory").value;
-    renderList("todoList", todos, filter);
-    renderList("doneList", dones, filter);
+    renderList("todoList", todos, filter, "todoSelectAll");
+    renderList("doneList", dones, filter, "doneSelectAll");
 }
 
-function renderList(id, list, filter) {
+function renderList(id, list, filter, selectAllId) {
     const container = document.getElementById(id);
     container.innerHTML = "";
     const today = new Date().toISOString().split('T')[0];
 
     let filteredList = list.filter(item => (filter === "all" || item.category === filter));
 
-    // 期限が近い順にソート
+    // ソート
     filteredList.sort((a, b) => {
         if (!a.deadline && b.deadline) return 1;
         if (a.deadline && !b.deadline) return -1;
         if (!a.deadline && !b.deadline) return 0;
         return a.deadline.localeCompare(b.deadline);
     });
+
+    // 全選択チェックボックスの状態更新
+    const selectAllCheckbox = document.getElementById(selectAllId);
+    if (filteredList.length > 0) {
+        selectAllCheckbox.checked = filteredList.every(item => item.checked);
+    } else {
+        selectAllCheckbox.checked = false;
+    }
 
     filteredList.forEach(item => {
         const card = document.createElement("div");
@@ -223,7 +258,7 @@ function renderList(id, list, filter) {
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox"; checkbox.checked = item.checked;
-        checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
+        checkbox.onchange = () => { item.checked = checkbox.checked; save(); render(); };
 
         const content = document.createElement("div");
         content.className = "todo-text";
@@ -293,7 +328,7 @@ function deleteChecked(type) {
     save(); render();
 }
 
-// --- バックアップ関連 ---
+// --- バックアップ ---
 function exportData() {
     const data = { todos, dones, categories, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
