@@ -3,21 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト</title>
+<title>Todoリスト - カテゴリ後付け機能付</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ===== 全体スタイル ===== */
+/* スタイルは前回を継承（編集用セレクトボックスのみ微調整） */
 body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:16px; color: #333; }
 .container { max-width:640px; margin:0 auto; padding:12px; }
-
 .title-card { background:white; border-top:8px solid #673ab7; border-radius:8px; padding:16px; margin-bottom:12px; }
 .title-card h1 { margin:0; font-size:22px; }
-
 .section-card { background:white; border-radius:8px; padding:16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.1); }
 .section-header { font-size:18px; font-weight:500; margin-bottom:8px; }
 .section-divider { height:1px; background:#e0e0e0; margin-bottom:12px; }
 
-/* ===== 入力・操作要素 ===== */
 textarea, input[type="text"] { width:100%; font-size:16px; border:none; border-bottom:1px solid #dadce0; outline: none; box-sizing: border-box; }
 textarea:focus, input[type="text"]:focus { border-bottom:2px solid #673ab7; }
 textarea { resize:none; overflow:hidden; min-height:48px; display: block; }
@@ -26,23 +23,23 @@ select { width:100%; font-size:16px; padding:10px 8px; border:none; border-botto
     background-image: url("data:image/svg+xml;utf8,<svg fill='%235f6368' height='24' viewBox='0 0 24 24' width='24'><path d='M7 10l5 5 5-5z'/></svg>");
     background-repeat:no-repeat; background-position:right 8px center; margin-top:8px; outline: none; }
 
-button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; transition: opacity 0.2s; }
-button:active { opacity: 0.7; }
-
+button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; }
 .btn-primary {background:#673ab7;color:white;}
 .btn-red {background:#d93025;color:white;}
 .btn-green {background:#188038;color:white;}
 .btn-gray {background:#9aa0a6;color:white;}
 .btn-sm { height: 32px; padding: 0 12px; margin-top: 0; font-size: 13px; }
 
-/* ===== Todoリスト項目 ===== */
 .todo-list { display:flex; flex-direction:column; gap:8px; }
 .todo-card { background:white; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
 .cat-label { display: block; font-size: 11px; color: #666; margin-bottom: 2px; font-weight: 500; }
-.edit-textarea { flex:1; font-size:16px; border:none; border-bottom:2px solid #673ab7; resize:none; outline: none; }
 
-/* ===== カテゴリ管理用 ===== */
+/* 編集モード用 */
+.edit-container { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.edit-textarea { width: 100%; font-size:16px; border:none; border-bottom:2px solid #673ab7; resize:none; outline: none; background: #f9f9f9; }
+.edit-select { font-size: 14px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+
 .category-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .category-item input { flex: 1; padding: 4px 0; }
 </style>
@@ -50,9 +47,7 @@ button:active { opacity: 0.7; }
 <body>
 
 <div class="container">
-    <div class="title-card">
-        <h1>Todoリスト</h1>
-    </div>
+    <div class="title-card"><h1>Todoリスト</h1></div>
 
     <div class="section-card">
         <div class="section-header">新しいTodo</div>
@@ -67,7 +62,7 @@ button:active { opacity: 0.7; }
     </div>
 
     <div class="section-card">
-        <div class="section-header">Todo</div>
+        <div class="section-header">Todo (ダブルクリックでカテゴリ変更)</div>
         <div class="section-divider"></div>
         <div id="todoList" class="todo-list"></div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
@@ -92,9 +87,7 @@ button:active { opacity: 0.7; }
         <div class="section-divider"></div>
         <div id="categoryManager"></div>
         <div style="margin-top: 15px; display: flex; gap: 8px; align-items: flex-end;">
-            <div style="flex: 1;">
-                <input type="text" id="newCategoryName" placeholder="新しいカテゴリ名">
-            </div>
+            <div style="flex: 1;"><input type="text" id="newCategoryName" placeholder="新しいカテゴリ名"></div>
             <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
         </div>
     </div>
@@ -104,15 +97,12 @@ button:active { opacity: 0.7; }
 let todos = [];
 let dones = [];
 let categories = [];
-
-// 色の配列（カテゴリごとのボーダー用）
 const COLORS = ['#1a73e8', '#188038', '#f29900', '#d93025', '#673ab7', '#00acc1', '#e91e63', '#795548'];
 
 function init() {
     todos = JSON.parse(localStorage.getItem("todos") || "[]");
     dones = JSON.parse(localStorage.getItem("dones") || "[]");
     categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物", "重要"]');
-    
     updateSelectOptions();
     renderCategoryManager();
     render();
@@ -124,18 +114,14 @@ function save() {
     localStorage.setItem("categories", JSON.stringify(categories));
 }
 
-// --- カテゴリ管理ロジック ---
-
+// --- カテゴリ管理 ---
 function renderCategoryManager() {
     const container = document.getElementById("categoryManager");
     container.innerHTML = "";
     categories.forEach((cat, index) => {
         const div = document.createElement("div");
         div.className = "category-item";
-        div.innerHTML = `
-            <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
-            <button class="btn-red btn-sm" onclick="deleteCategory(${index})">削除</button>
-        `;
+        div.innerHTML = `<input type="text" value="${cat}" onchange="editCategory(${index}, this.value)"><button class="btn-red btn-sm" onclick="deleteCategory(${index})">削除</button>`;
         container.appendChild(div);
     });
 }
@@ -157,12 +143,8 @@ function editCategory(index, newName) {
     const oldName = categories[index];
     const name = newName.trim();
     if (!name || oldName === name) return;
-    
-    // Todoに紐付いているカテゴリ名も一括更新
     const updateList = (list) => list.forEach(t => { if(t.category === oldName) t.category = name; });
-    updateList(todos);
-    updateList(dones);
-    
+    updateList(todos); updateList(dones);
     categories[index] = name;
     save();
     updateSelectOptions();
@@ -171,11 +153,9 @@ function editCategory(index, newName) {
 
 function deleteCategory(index) {
     const targetName = categories[index];
-    if (confirm(`カテゴリ「${targetName}」を削除しますか？\n※このカテゴリのTodoは「カテゴリなし」に変更されます。`)) {
+    if (confirm(`カテゴリ「${targetName}」を削除しますか？`)) {
         const resetCat = (list) => list.forEach(t => { if(t.category === targetName) t.category = ""; });
-        resetCat(todos);
-        resetCat(dones);
-        
+        resetCat(todos); resetCat(dones);
         categories.splice(index, 1);
         save();
         updateSelectOptions();
@@ -187,20 +167,15 @@ function deleteCategory(index) {
 function updateSelectOptions() {
     const catSelect = document.getElementById("categorySelect");
     const filterSelect = document.getElementById("filterCategory");
-    
-    // 入力用プルダウン
     let options = `<option value="">カテゴリなし</option>`;
     categories.forEach(cat => { options += `<option value="${cat}">${cat}</option>`; });
     catSelect.innerHTML = options;
-
-    // フィルター用プルダウン
     let filterOptions = `<option value="all">すべて表示</option><option value="">カテゴリなし</option>`;
     categories.forEach(cat => { filterOptions += `<option value="${cat}">${cat}</option>`; });
     filterSelect.innerHTML = filterOptions;
 }
 
-// --- Todo本体のロジック ---
-
+// --- Todo本体 ---
 const newTodoTextarea = document.getElementById("newTodo");
 newTodoTextarea.addEventListener("input", () => {
     newTodoTextarea.style.height = "auto";
@@ -229,22 +204,16 @@ function render() {
 function renderList(id, list, filter) {
     const container = document.getElementById(id);
     container.innerHTML = "";
-
     list.filter(item => (filter === "all" || item.category === filter))
         .forEach(item => {
             const card = document.createElement("div");
             card.className = "todo-card";
-            
-            // カテゴリに応じたボーダー色を設定
             if (item.category) {
                 const colorIdx = categories.indexOf(item.category) % COLORS.length;
                 card.style.borderLeftColor = COLORS[colorIdx] || '#ccc';
             }
-
             const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = item.checked;
-            checkbox.style.marginTop = "4px";
+            checkbox.type = "checkbox"; checkbox.checked = item.checked;
             checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
 
             const textDiv = document.createElement("div");
@@ -252,7 +221,8 @@ function renderList(id, list, filter) {
             const catSpan = item.category ? `<span class="cat-label">${item.category}</span>` : "";
             textDiv.innerHTML = catSpan + item.text;
 
-            textDiv.ondblclick = () => startEdit(textDiv, item);
+            // ダブルクリックで編集開始
+            textDiv.ondblclick = () => startEdit(textDiv, item, card);
 
             card.appendChild(checkbox);
             card.appendChild(textDiv);
@@ -260,18 +230,49 @@ function renderList(id, list, filter) {
         });
 }
 
-function startEdit(textDiv, item) {
+// ★ここが「後から付与」の核となる編集機能
+function startEdit(textDiv, item, card) {
+    const editContainer = document.createElement("div");
+    editContainer.className = "edit-container";
+
+    // テキスト編集用
     const editArea = document.createElement("textarea");
     editArea.className = "edit-textarea";
     editArea.value = item.text;
-    textDiv.replaceWith(editArea);
+
+    // カテゴリ再選択用
+    const editSel = document.createElement("select");
+    editSel.className = "edit-select";
+    let options = `<option value="">カテゴリなし</option>`;
+    categories.forEach(cat => {
+        options += `<option value="${cat}" ${item.category === cat ? 'selected' : ''}>${cat}</option>`;
+    });
+    editSel.innerHTML = options;
+
+    editContainer.appendChild(editArea);
+    editContainer.appendChild(editSel);
+    textDiv.replaceWith(editContainer);
+    
     editArea.focus();
     editArea.style.height = editArea.scrollHeight + "px";
 
-    editArea.addEventListener("blur", () => {
+    // 保存処理 (テキストエリアまたはセレクトボックスから離れたら保存)
+    let isSaving = false;
+    const saveEdit = () => {
+        if (isSaving) return;
+        isSaving = true;
         item.text = editArea.value;
+        item.category = editSel.value;
         save();
         render();
+    };
+
+    // blurイベントだとselect操作時に消えてしまうことがあるため、簡易的な制御
+    editArea.addEventListener("blur", (e) => {
+        setTimeout(() => { if (document.activeElement !== editSel) saveEdit(); }, 100);
+    });
+    editSel.addEventListener("blur", (e) => {
+        setTimeout(() => { if (document.activeElement !== editArea) saveEdit(); }, 100);
     });
 }
 
@@ -281,26 +282,21 @@ function completeChecked() {
         if (i.checked) { i.checked = false; dones.push(i); }
         else { remain.push(i); }
     });
-    todos = remain;
-    save();
-    render();
+    todos = remain; save(); render();
 }
 
 function deleteChecked(type) {
     if (type === "todo") todos = todos.filter(i => !i.checked);
     else dones = dones.filter(i => !i.checked);
-    save();
-    render();
+    save(); render();
 }
 
 function clearChecks(type) {
     let list = type === "todo" ? todos : dones;
     list.forEach(i => i.checked = false);
-    save();
-    render();
+    save(); render();
 }
 
-// 起動
 init();
 </script>
 </body>
