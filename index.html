@@ -44,16 +44,29 @@ textarea, input[type="text"], input[type="date"], select {
 textarea:focus, input:focus, select:focus { border-bottom:2px solid var(--primary-color); }
 textarea { resize:none; overflow:hidden; min-height:44px; display: block; margin-bottom: 8px; }
 
-button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; }
+button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; white-space: nowrap; }
 .btn-primary {background: var(--primary-color); color:white;}
 .btn-red {background:#d93025;color:white;}
 .btn-green {background:#188038;color:white;}
 .btn-blue {background:#1a73e8;color:white;}
 .btn-gray {background:#9aa0a6;color:white;}
-.btn-sm { height: 32px; padding: 0 8px; margin-top: 0; font-size: 13px; }
 
-/* ボタン表示・非表示用 */
+.btn-sm { 
+    height: 36px; 
+    padding: 0 12px; 
+    margin-top: 0; 
+    font-size: 14px; 
+    min-width: 44px; 
+}
+
 .invisible { visibility: hidden; pointer-events: none; }
+
+/* カテゴリ一覧のスタイル修正 */
+.category-item { display:flex; gap:8px; margin-bottom:12px; align-items:center; }
+.category-item input { flex:1; font-size: 15px; }
+.category-controls { display: flex; align-items: center; gap: 4px; }
+.btn-delete-cat { margin-left: 12px; background: #eee; color: #666; border-radius: 50%; width: 32px; height: 32px; padding: 0; min-width: 32px; font-weight: bold; }
+body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
 .todo-list { display:flex; flex-direction:column; gap:8px; }
 .todo-card { background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -65,8 +78,6 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .info-row { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .cat-label { font-size: 11px; color: #666; font-weight: 500; background: #eee; padding: 2px 6px; border-radius: 4px; }
 
-.category-item { display:flex; gap:5px; margin-bottom:8px; align-items:center; }
-.category-item input { flex:1; }
 .edit-container { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; }
 </style>
 </head>
@@ -99,8 +110,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     </div>
 
     <div class="section-card">
-        <div class="section-header">
-            Todo
+        <div class="section-header">Todo
             <label style="font-size: 13px; font-weight: normal; cursor: pointer;">
                 <input type="checkbox" id="todoSelectAll" onchange="toggleAll('todo', this.checked)"> 全選択
             </label>
@@ -114,8 +124,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     </div>
 
     <div class="section-card">
-        <div class="section-header">
-            完了済み
+        <div class="section-header">完了済み
             <label style="font-size: 13px; font-weight: normal; cursor: pointer;">
                 <input type="checkbox" id="doneSelectAll" onchange="toggleAll('done', this.checked)"> 全選択
             </label>
@@ -131,11 +140,11 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     <div class="section-card">
         <div class="section-header">カテゴリ設定</div>
         <div class="section-divider"></div>
-        <div id="categoryManager"></div>
-        <div style="margin-top: 12px; display: flex; gap: 8px; align-items: flex-end;">
-            <input type="text" id="newCategoryName" placeholder="新規カテゴリ名">
-            <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
+        <div style="margin-bottom: 20px; display: flex; gap: 8px; align-items: flex-end; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 6px;">
+            <input type="text" id="newCategoryName" placeholder="新規カテゴリ名を入力...">
+            <button class="btn-primary btn-sm" style="min-width:70px;" onclick="addCategory()">追加</button>
         </div>
+        <div id="categoryManager"></div>
     </div>
 
     <div class="section-card" style="margin-top: 24px; border-top: 1px dashed var(--border-color); background: transparent; box-shadow: none;">
@@ -210,13 +219,11 @@ function addTodo() {
 function render() {
     const filter = document.getElementById("filterCategory").value;
     const search = document.getElementById("searchInput").value.toLowerCase();
-    
     const filterFunc = (item) => {
         const matchCat = (filter === "all" || item.category === filter);
         const matchSearch = (item.text.toLowerCase().includes(search) || (item.memo && item.memo.toLowerCase().includes(search)));
         return matchCat && matchSearch;
     };
-
     renderList("todoList", todos.filter(filterFunc), "todoSelectAll");
     renderList("doneList", dones.filter(filterFunc), "doneSelectAll");
 }
@@ -242,14 +249,11 @@ function renderList(id, filteredList, selectAllId) {
             const idx = categories.indexOf(item.category) % COLORS.length;
             card.style.borderLeftColor = COLORS[idx] || '#ccc';
         }
-
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox"; checkbox.checked = item.checked;
         checkbox.onchange = () => { item.checked = checkbox.checked; save(); render(); };
-
         const content = document.createElement("div");
         content.className = "todo-text";
-
         let infoHtml = `<div class="info-row">`;
         if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
         if (item.deadline) {
@@ -257,12 +261,10 @@ function renderList(id, filteredList, selectAllId) {
             infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${item.deadline}</span>`;
         }
         infoHtml += `</div>`;
-
         let starHtml = item.important ? `<span class="star">⭐</span>` : "";
         let memoHtml = item.memo ? `<span class="todo-memo-text">${item.memo.replace(/\n/g, '<br>')}</span>` : "";
         content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${item.text}</span>` + memoHtml;
         content.ondblclick = () => startEdit(content, item);
-
         card.appendChild(checkbox);
         card.appendChild(content);
         container.appendChild(card);
@@ -285,20 +287,14 @@ function startEdit(contentArea, item) {
     editCat.innerHTML = catOpts;
     const editDate = document.createElement("input");
     editDate.type = "date"; editDate.value = item.deadline || "";
-
     editBox.append(editTxt, editMemo, editImp, editCat, editDate);
     contentArea.replaceWith(editBox);
     editTxt.focus();
-
     const saveEdit = () => {
-        item.text = editTxt.value;
-        item.memo = editMemo.value;
-        item.important = editImp.querySelector('input').checked;
-        item.category = editCat.value;
-        item.deadline = editDate.value;
+        item.text = editTxt.value; item.memo = editMemo.value; item.important = editImp.querySelector('input').checked;
+        item.category = editCat.value; item.deadline = editDate.value;
         save(); render();
     };
-
     [editTxt, editMemo, editCat, editDate, editImp].forEach(el => {
         el.addEventListener("blur", () => {
             setTimeout(() => { if (!editBox.contains(document.activeElement)) saveEdit(); }, 200);
@@ -337,7 +333,7 @@ function deleteChecked(type) {
     save(); render();
 }
 
-// --- カテゴリ管理（改良版並び替え） ---
+// --- カテゴリ管理（右側配置 & 押し間違い防止版） ---
 function renderCategoryManager() {
     const container = document.getElementById("categoryManager");
     container.innerHTML = "";
@@ -345,16 +341,16 @@ function renderCategoryManager() {
         const div = document.createElement("div");
         div.className = "category-item";
         
-        // 上ボタン（最初の要素なら見えないようにする）
         const upBtnClass = (index === 0) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
-        // 下ボタン（最後の要素なら見えないようにする）
         const downBtnClass = (index === categories.length - 1) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
 
         div.innerHTML = `
-            <button class="${upBtnClass}" onclick="moveCategory(${index}, -1)">↑</button>
-            <button class="${downBtnClass}" onclick="moveCategory(${index}, 1)">↓</button>
             <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
-            <button class="btn-red btn-sm" onclick="deleteCategory(${index})">×</button>
+            <div class="category-controls">
+                <button class="${upBtnClass}" onclick="moveCategory(${index}, -1)">↑</button>
+                <button class="${downBtnClass}" onclick="moveCategory(${index}, 1)">↓</button>
+                <button class="btn-delete-cat" onclick="deleteCategory(${index})" title="削除">×</button>
+            </div>
         `;
         container.appendChild(div);
     });
@@ -371,8 +367,9 @@ function moveCategory(index, direction) {
 
 function addCategory() {
     const input = document.getElementById("newCategoryName");
-    if (input.value.trim()) {
-        categories.push(input.value.trim());
+    const newName = input.value.trim();
+    if (newName) {
+        categories.unshift(newName);
         input.value = ""; save(); updateSelectOptions(); renderCategoryManager(); render();
     }
 }
@@ -385,7 +382,7 @@ function editCategory(index, newName) {
 }
 
 function deleteCategory(index) {
-    if (confirm("カテゴリを削除しますか？")) {
+    if (confirm(`カテゴリ「${categories[index]}」を削除しますか？`)) {
         const name = categories[index];
         [todos, dones].forEach(list => list.forEach(t => { if(t.category === name) t.category = ""; }));
         categories.splice(index, 1); save(); updateSelectOptions(); renderCategoryManager(); render();
@@ -417,7 +414,7 @@ function importData(event) {
             todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
             save(); updateSelectOptions(); renderCategoryManager(); render();
             alert("復元完了しました。");
-        } catch (err) { alert("正しいファイルを選択してください。"); }
+        } catch (err) { alert("形式が不正です。"); }
     };
     reader.readAsText(file);
 }
