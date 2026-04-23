@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト Pro+</title>
+<title>Todoリスト Pro+ Custom</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -19,7 +19,6 @@
     --primary-color: #673ab7;
 }
 
-/* ダークモード用変数 */
 body.dark-mode {
     --bg-color: #121212;
     --card-bg: #1e1e1e;
@@ -29,10 +28,9 @@ body.dark-mode {
     --primary-color: #bb86fc;
 }
 
-body { margin:0; background: var(--bg-color); font-family:'Roboto',sans-serif; font-size:16px; color: var(--text-color); transition: 0.3s; }
+body { margin:0; background: var(--bg-color); font-family:'Roboto',sans-serif; font-size:16px; color: var(--text-color); transition: 0.3s; padding-bottom: 50px; }
 .container { max-width:640px; margin:0 auto; padding:12px; }
 
-/* ヘッダー周り */
 .title-card { background: var(--card-bg); border-top:8px solid var(--primary-color); border-radius:8px; padding:16px; margin-bottom:12px; display: flex; justify-content: space-between; align-items: center; }
 .title-card h1 { margin:0; font-size:22px; }
 
@@ -40,23 +38,23 @@ body { margin:0; background: var(--bg-color); font-family:'Roboto',sans-serif; f
 .section-header { font-size:18px; font-weight:500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .section-divider { height:1px; background: var(--border-color); margin-bottom:12px; }
 
-/* 入力パーツ */
 textarea, input[type="text"], input[type="date"], select { 
     width:100%; font-size:16px; border:none; border-bottom:1px solid var(--border-color); outline: none; box-sizing: border-box; background:transparent; color: var(--text-color);
 }
 textarea:focus, input:focus, select:focus { border-bottom:2px solid var(--primary-color); }
 textarea { resize:none; overflow:hidden; min-height:44px; display: block; margin-bottom: 8px; }
 
-/* ボタン */
 button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; }
 .btn-primary {background: var(--primary-color); color:white;}
 .btn-red {background:#d93025;color:white;}
 .btn-green {background:#188038;color:white;}
 .btn-blue {background:#1a73e8;color:white;}
 .btn-gray {background:#9aa0a6;color:white;}
-.btn-sm { height: 32px; padding: 0 12px; margin-top: 0; font-size: 13px; }
+.btn-sm { height: 32px; padding: 0 8px; margin-top: 0; font-size: 13px; }
 
-/* リスト表示 */
+/* ボタン表示・非表示用 */
+.invisible { visibility: hidden; pointer-events: none; }
+
 .todo-list { display:flex; flex-direction:column; gap:8px; }
 .todo-card { background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
@@ -67,7 +65,8 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .info-row { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .cat-label { font-size: 11px; color: #666; font-weight: 500; background: #eee; padding: 2px 6px; border-radius: 4px; }
 
-/* 編集用 */
+.category-item { display:flex; gap:5px; margin-bottom:8px; align-items:center; }
+.category-item input { flex:1; }
 .edit-container { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; }
 </style>
 </head>
@@ -86,7 +85,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <select id="categorySelect" style="flex: 2; min-width: 120px;"></select>
             <input type="date" id="deadlineInput" style="flex: 2; min-width: 120px;">
-            <label style="flex: 1; display: flex; align-items: center; font-size: 14px; gap: 4px; min-width: 80px;">
+            <label style="flex: 1; display: flex; align-items: center; font-size: 14px; gap: 4px; min-width: 80px; cursor:pointer;">
                 <input type="checkbox" id="isImportant"> ⭐重要
             </label>
         </div>
@@ -130,16 +129,21 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     </div>
 
     <div class="section-card">
-        <div class="section-header">管理</div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-gray btn-sm" onclick="exportData()">保存(JSON)</button>
-            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">復元</button>
-            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
-        </div>
-        <div id="categoryManager" style="margin-top:15px;"></div>
-        <div style="margin-top: 8px; display: flex; gap: 8px;">
-            <input type="text" id="newCategoryName" placeholder="新規カテゴリ">
+        <div class="section-header">カテゴリ設定</div>
+        <div class="section-divider"></div>
+        <div id="categoryManager"></div>
+        <div style="margin-top: 12px; display: flex; gap: 8px; align-items: flex-end;">
+            <input type="text" id="newCategoryName" placeholder="新規カテゴリ名">
             <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
+        </div>
+    </div>
+
+    <div class="section-card" style="margin-top: 24px; border-top: 1px dashed var(--border-color); background: transparent; box-shadow: none;">
+        <div class="section-header" style="font-size: 14px; opacity: 0.7;">バックアップと復元</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-gray btn-sm" onclick="exportData()">データを保存(JSON)</button>
+            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">ファイルから復元</button>
+            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
         </div>
     </div>
 </div>
@@ -199,6 +203,7 @@ function addTodo() {
     });
     
     textEl.value = ""; memoEl.value = ""; starEl.checked = false;
+    textEl.style.height = "auto"; memoEl.style.height = "auto";
     save(); render();
 }
 
@@ -221,7 +226,6 @@ function renderList(id, filteredList, selectAllId) {
     container.innerHTML = "";
     const today = new Date().toISOString().split('T')[0];
 
-    // ソート: 重要度(星)が最優先、次に期限順
     filteredList.sort((a, b) => {
         if (a.important !== b.important) return b.important - a.important;
         if (!a.deadline && b.deadline) return 1;
@@ -236,7 +240,7 @@ function renderList(id, filteredList, selectAllId) {
         card.className = "todo-card";
         if (item.category) {
             const idx = categories.indexOf(item.category) % COLORS.length;
-            card.style.borderLeftColor = COLORS[idx];
+            card.style.borderLeftColor = COLORS[idx] || '#ccc';
         }
 
         const checkbox = document.createElement("input");
@@ -265,36 +269,25 @@ function renderList(id, filteredList, selectAllId) {
     });
 }
 
-function startEdit(container, item) {
+function startEdit(contentArea, item) {
     const editBox = document.createElement("div");
     editBox.className = "edit-container";
-    
     const editTxt = document.createElement("textarea");
     editTxt.value = item.text;
-    
     const editMemo = document.createElement("textarea");
     editMemo.style.fontSize = "13px";
     editMemo.value = item.memo || "";
-    editMemo.placeholder = "メモ...";
-
     const editImp = document.createElement("label");
     editImp.innerHTML = `<input type="checkbox" ${item.important?'checked':''}> ⭐重要`;
-
-    const editBoxBot = document.createElement("div");
-    editBoxBot.style.display = "flex"; editBoxBot.style.gap = "5px";
-    
     const editCat = document.createElement("select");
     let catOpts = `<option value="">なし</option>`;
     categories.forEach(c => catOpts += `<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`);
     editCat.innerHTML = catOpts;
-
     const editDate = document.createElement("input");
-    editDate.type = "date";
-    editDate.value = item.deadline || "";
+    editDate.type = "date"; editDate.value = item.deadline || "";
 
-    editBoxBot.append(editCat, editDate);
-    editBox.append(editTxt, editMemo, editImp, editBoxBot);
-    container.replaceWith(editBox);
+    editBox.append(editTxt, editMemo, editImp, editCat, editDate);
+    contentArea.replaceWith(editBox);
     editTxt.focus();
 
     const saveEdit = () => {
@@ -313,7 +306,6 @@ function startEdit(container, item) {
     });
 }
 
-// 共通アクション
 function toggleAll(type, isChecked) {
     const search = document.getElementById("searchInput").value.toLowerCase();
     const filter = document.getElementById("filterCategory").value;
@@ -345,23 +337,36 @@ function deleteChecked(type) {
     save(); render();
 }
 
-function updateSelectOptions() {
-    const selects = [document.getElementById("categorySelect"), document.getElementById("filterCategory")];
-    let opts = `<option value="">カテゴリなし</option>`;
-    categories.forEach(c => opts += `<option value="${c}">${c}</option>`);
-    selects[0].innerHTML = opts;
-    selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
-}
-
+// --- カテゴリ管理（改良版並び替え） ---
 function renderCategoryManager() {
     const container = document.getElementById("categoryManager");
     container.innerHTML = "";
     categories.forEach((cat, index) => {
         const div = document.createElement("div");
-        div.style.display="flex"; div.style.gap="5px"; div.style.marginBottom="5px";
-        div.innerHTML = `<input type="text" value="${cat}" onchange="editCategory(${index}, this.value)"><button class="btn-red btn-sm" onclick="deleteCategory(${index})">×</button>`;
+        div.className = "category-item";
+        
+        // 上ボタン（最初の要素なら見えないようにする）
+        const upBtnClass = (index === 0) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
+        // 下ボタン（最後の要素なら見えないようにする）
+        const downBtnClass = (index === categories.length - 1) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
+
+        div.innerHTML = `
+            <button class="${upBtnClass}" onclick="moveCategory(${index}, -1)">↑</button>
+            <button class="${downBtnClass}" onclick="moveCategory(${index}, 1)">↓</button>
+            <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
+            <button class="btn-red btn-sm" onclick="deleteCategory(${index})">×</button>
+        `;
         container.appendChild(div);
     });
+}
+
+function moveCategory(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+    const temp = categories[index];
+    categories[index] = categories[targetIndex];
+    categories[targetIndex] = temp;
+    save(); updateSelectOptions(); renderCategoryManager(); render();
 }
 
 function addCategory() {
@@ -380,11 +385,19 @@ function editCategory(index, newName) {
 }
 
 function deleteCategory(index) {
-    if (confirm("削除しますか？")) {
+    if (confirm("カテゴリを削除しますか？")) {
         const name = categories[index];
         [todos, dones].forEach(list => list.forEach(t => { if(t.category === name) t.category = ""; }));
         categories.splice(index, 1); save(); updateSelectOptions(); renderCategoryManager(); render();
     }
+}
+
+function updateSelectOptions() {
+    const selects = [document.getElementById("categorySelect"), document.getElementById("filterCategory")];
+    let opts = `<option value="">カテゴリなし</option>`;
+    categories.forEach(c => opts += `<option value="${c}">${c}</option>`);
+    selects[0].innerHTML = opts;
+    selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
 }
 
 function exportData() {
@@ -403,7 +416,8 @@ function importData(event) {
             const data = JSON.parse(e.target.result);
             todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
             save(); updateSelectOptions(); renderCategoryManager(); render();
-        } catch (err) { alert("形式が正しくありません"); }
+            alert("復元完了しました。");
+        } catch (err) { alert("正しいファイルを選択してください。"); }
     };
     reader.readAsText(file);
 }
