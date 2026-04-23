@@ -3,627 +3,305 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>Todoリスト</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-
-/* ===== 全体 ===== */
-
-body {
-margin:0;
-background:#f0ebf8;
-font-family:'Roboto',sans-serif;
-font-size:16px;
-}
-
-.container {
-max-width:640px;
-margin:0 auto;
-padding:12px;
-}
-
-/* ===== タイトル ===== */
-
-.title-card {
-background:white;
-border-top:8px solid #673ab7;
-border-radius:8px;
-padding:16px;
-margin-bottom:12px;
-}
-
-.title-card h1 {
-margin:0;
-font-size:22px;
-}
-
-/* ===== カード ===== */
-
-.section-card {
-
-background:white;
-
-border-radius:8px;
-
-padding:16px;
-
-margin-bottom:12px;
-
-box-shadow:0 1px 2px rgba(0,0,0,0.1);
-
-}
-
-/* ===== セクション ===== */
-
-.section-header {
-
-font-size:18px;
-
-font-weight:500;
-
-margin-bottom:8px;
-
-}
-
-.section-divider {
-
-height:1px;
-
-background:#e0e0e0;
-
-margin-bottom:12px;
-
-}
-
-/* ===== textarea ===== */
-
-textarea {
-
-width:100%;
-
-font-size:16px;
-
-border:none;
-
-border-bottom:1px solid #dadce0;
-
-resize:none;
-
-overflow:hidden;
-
-min-height:48px;
-
-}
-
-textarea:focus {
-
-outline:none;
-
-border-bottom:2px solid #673ab7;
-
-}
-
-/* ===== モダンプルダウン ===== */
-
-select {
-
-width:100%;
-
-font-size:16px;
-
-padding:10px 8px;
-
-border:none;
-
-border-bottom:1px solid #dadce0;
-
-background:white;
-
-appearance:none;
-
-background-image:
-url("data:image/svg+xml;utf8,<svg fill='%235f6368' height='24' viewBox='0 0 24 24' width='24'><path d='M7 10l5 5 5-5z'/></svg>");
-
-background-repeat:no-repeat;
-
-background-position:right 8px center;
-
-margin-top:8px;
-
-}
-
-select:focus {
-
-outline:none;
-
-border-bottom:2px solid #673ab7;
-
-}
-
-/* ===== ボタン ===== */
-
-button {
-
-height:44px;
-
-padding:0 18px;
-
-font-size:16px;
-
-border-radius:6px;
-
-border:none;
-
-margin-top:10px;
-
-}
+/* ===== 全体スタイル ===== */
+body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:16px; color: #333; }
+.container { max-width:640px; margin:0 auto; padding:12px; }
+
+.title-card { background:white; border-top:8px solid #673ab7; border-radius:8px; padding:16px; margin-bottom:12px; }
+.title-card h1 { margin:0; font-size:22px; }
+
+.section-card { background:white; border-radius:8px; padding:16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.1); }
+.section-header { font-size:18px; font-weight:500; margin-bottom:8px; }
+.section-divider { height:1px; background:#e0e0e0; margin-bottom:12px; }
+
+/* ===== 入力・操作要素 ===== */
+textarea, input[type="text"] { width:100%; font-size:16px; border:none; border-bottom:1px solid #dadce0; outline: none; box-sizing: border-box; }
+textarea:focus, input[type="text"]:focus { border-bottom:2px solid #673ab7; }
+textarea { resize:none; overflow:hidden; min-height:48px; display: block; }
+
+select { width:100%; font-size:16px; padding:10px 8px; border:none; border-bottom:1px solid #dadce0; background:white; appearance:none; 
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%235f6368' height='24' viewBox='0 0 24 24' width='24'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat:no-repeat; background-position:right 8px center; margin-top:8px; outline: none; }
+
+button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:none; margin-top:10px; cursor: pointer; transition: opacity 0.2s; }
+button:active { opacity: 0.7; }
 
 .btn-primary {background:#673ab7;color:white;}
 .btn-red {background:#d93025;color:white;}
 .btn-green {background:#188038;color:white;}
 .btn-gray {background:#9aa0a6;color:white;}
+.btn-sm { height: 32px; padding: 0 12px; margin-top: 0; font-size: 13px; }
 
-/* ===== Todo ===== */
+/* ===== Todoリスト項目 ===== */
+.todo-list { display:flex; flex-direction:column; gap:8px; }
+.todo-card { background:white; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
+.cat-label { display: block; font-size: 11px; color: #666; margin-bottom: 2px; font-weight: 500; }
+.edit-textarea { flex:1; font-size:16px; border:none; border-bottom:2px solid #673ab7; resize:none; outline: none; }
 
-.todo-list {
-
-display:flex;
-
-flex-direction:column;
-
-gap:8px;
-
-}
-
-.todo-card {
-
-background:white;
-
-border-radius:8px;
-
-padding:12px;
-
-display:flex;
-
-gap:12px;
-
-align-items:flex-start;
-
-border-left:6px solid transparent;
-
-}
-
-/* カテゴリ色 */
-
-.cat-work {border-left-color:#1a73e8;}
-.cat-home {border-left-color:#188038;}
-.cat-shop {border-left-color:#f29900;}
-.cat-important {border-left-color:#d93025;}
-
-.todo-text {
-
-flex:1;
-
-white-space:pre-wrap;
-
-}
-
-.edit-textarea {
-
-flex:1;
-
-font-size:16px;
-
-border:none;
-
-border-bottom:2px solid #673ab7;
-
-resize:none;
-
-overflow:hidden;
-
-}
-
+/* ===== カテゴリ管理用 ===== */
+.category-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.category-item input { flex: 1; padding: 4px 0; }
 </style>
 </head>
-
 <body>
 
 <div class="container">
+    <div class="title-card">
+        <h1>Todoリスト</h1>
+    </div>
 
-<div class="title-card">
-<h1>Todoリスト</h1>
-</div>
+    <div class="section-card">
+        <div class="section-header">新しいTodo</div>
+        <textarea id="newTodo" rows="1" placeholder="タスクを入力..."></textarea>
+        <select id="categorySelect"></select>
+        <button class="btn-primary" onclick="addTodo()">追加</button>
+    </div>
 
-<!-- 入力 -->
+    <div class="section-card">
+        <div class="section-header">表示カテゴリ</div>
+        <select id="filterCategory" onchange="render()"></select>
+    </div>
 
-<div class="section-card">
+    <div class="section-card">
+        <div class="section-header">Todo</div>
+        <div class="section-divider"></div>
+        <div id="todoList" class="todo-list"></div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn-red" onclick="deleteChecked('todo')">削除</button>
+            <button class="btn-green" onclick="completeChecked()">完了</button>
+            <button class="btn-gray" onclick="clearChecks('todo')">解除</button>
+        </div>
+    </div>
 
-<div class="section-header">
-新しいTodo
-</div>
+    <div class="section-card">
+        <div class="section-header">完了リスト</div>
+        <div class="section-divider"></div>
+        <div id="doneList" class="todo-list"></div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn-red" onclick="deleteChecked('done')">削除</button>
+            <button class="btn-gray" onclick="clearChecks('done')">解除</button>
+        </div>
+    </div>
 
-<textarea
-id="newTodo"
-rows="1"
-placeholder="Enterで改行"
-></textarea>
-
-<select id="category">
-
-<option value="">カテゴリなし</option>
-<option value="work">仕事</option>
-<option value="home">家事</option>
-<option value="shop">買い物</option>
-<option value="important">重要</option>
-
-</select>
-
-<button
-class="btn-primary"
-onclick="addTodo()">
-追加
-</button>
-
-</div>
-
-<!-- フィルター -->
-
-<div class="section-card">
-
-<div class="section-header">
-表示カテゴリ
-</div>
-
-<select
-id="filterCategory"
-onchange="render()">
-
-<option value="all">すべて表示</option>
-<option value="work">仕事</option>
-<option value="home">家事</option>
-<option value="shop">買い物</option>
-<option value="important">重要</option>
-
-</select>
-
-</div>
-
-<!-- Todo -->
-
-<div class="section-card">
-
-<div class="section-header">
-Todo
-</div>
-
-<div class="section-divider"></div>
-
-<div id="todoList" class="todo-list"></div>
-
-<button class="btn-red"
-onclick="deleteChecked('todo')">
-削除
-</button>
-
-<button class="btn-green"
-onclick="completeChecked()">
-完了
-</button>
-
-<button class="btn-gray"
-onclick="clearChecks('todo')">
-解除
-</button>
-
-</div>
-
-<!-- 完了 -->
-
-<div class="section-card">
-
-<div class="section-header">
-完了リスト
-</div>
-
-<div class="section-divider"></div>
-
-<div id="doneList" class="todo-list"></div>
-
-<button class="btn-red"
-onclick="deleteChecked('done')">
-削除
-</button>
-
-<button class="btn-gray"
-onclick="clearChecks('done')">
-解除
-</button>
-
-</div>
-
+    <div class="section-card">
+        <div class="section-header">カテゴリの設定</div>
+        <div class="section-divider"></div>
+        <div id="categoryManager"></div>
+        <div style="margin-top: 15px; display: flex; gap: 8px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <input type="text" id="newCategoryName" placeholder="新しいカテゴリ名">
+            </div>
+            <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
+        </div>
+    </div>
 </div>
 
 <script>
+let todos = [];
+let dones = [];
+let categories = [];
 
-let todos=[];
-let dones=[];
+// 色の配列（カテゴリごとのボーダー用）
+const COLORS = ['#1a73e8', '#188038', '#f29900', '#d93025', '#673ab7', '#00acc1', '#e91e63', '#795548'];
 
-/* 保存 */
-
-function save(){
-
-localStorage.setItem("todos",
-JSON.stringify(todos));
-
-localStorage.setItem("dones",
-JSON.stringify(dones));
-
+function init() {
+    todos = JSON.parse(localStorage.getItem("todos") || "[]");
+    dones = JSON.parse(localStorage.getItem("dones") || "[]");
+    categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物", "重要"]');
+    
+    updateSelectOptions();
+    renderCategoryManager();
+    render();
 }
 
-/* 読込 */
-
-function load(){
-
-todos=
-JSON.parse(localStorage.getItem("todos")||"[]");
-
-dones=
-JSON.parse(localStorage.getItem("dones")||"[]");
-
-render();
-
+function save() {
+    localStorage.setItem("todos", JSON.stringify(todos));
+    localStorage.setItem("dones", JSON.stringify(dones));
+    localStorage.setItem("categories", JSON.stringify(categories));
 }
 
-/* textarea自動拡張 */
+// --- カテゴリ管理ロジック ---
 
-const textarea=document.getElementById("newTodo");
+function renderCategoryManager() {
+    const container = document.getElementById("categoryManager");
+    container.innerHTML = "";
+    categories.forEach((cat, index) => {
+        const div = document.createElement("div");
+        div.className = "category-item";
+        div.innerHTML = `
+            <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
+            <button class="btn-red btn-sm" onclick="deleteCategory(${index})">削除</button>
+        `;
+        container.appendChild(div);
+    });
+}
 
-textarea.addEventListener("input",()=>{
+function addCategory() {
+    const input = document.getElementById("newCategoryName");
+    const name = input.value.trim();
+    if (name && !categories.includes(name)) {
+        categories.push(name);
+        input.value = "";
+        save();
+        updateSelectOptions();
+        renderCategoryManager();
+        render();
+    }
+}
 
-textarea.style.height="auto";
+function editCategory(index, newName) {
+    const oldName = categories[index];
+    const name = newName.trim();
+    if (!name || oldName === name) return;
+    
+    // Todoに紐付いているカテゴリ名も一括更新
+    const updateList = (list) => list.forEach(t => { if(t.category === oldName) t.category = name; });
+    updateList(todos);
+    updateList(dones);
+    
+    categories[index] = name;
+    save();
+    updateSelectOptions();
+    render();
+}
 
-textarea.style.height=
-textarea.scrollHeight+"px";
+function deleteCategory(index) {
+    const targetName = categories[index];
+    if (confirm(`カテゴリ「${targetName}」を削除しますか？\n※このカテゴリのTodoは「カテゴリなし」に変更されます。`)) {
+        const resetCat = (list) => list.forEach(t => { if(t.category === targetName) t.category = ""; });
+        resetCat(todos);
+        resetCat(dones);
+        
+        categories.splice(index, 1);
+        save();
+        updateSelectOptions();
+        renderCategoryManager();
+        render();
+    }
+}
 
+function updateSelectOptions() {
+    const catSelect = document.getElementById("categorySelect");
+    const filterSelect = document.getElementById("filterCategory");
+    
+    // 入力用プルダウン
+    let options = `<option value="">カテゴリなし</option>`;
+    categories.forEach(cat => { options += `<option value="${cat}">${cat}</option>`; });
+    catSelect.innerHTML = options;
+
+    // フィルター用プルダウン
+    let filterOptions = `<option value="all">すべて表示</option><option value="">カテゴリなし</option>`;
+    categories.forEach(cat => { filterOptions += `<option value="${cat}">${cat}</option>`; });
+    filterSelect.innerHTML = filterOptions;
+}
+
+// --- Todo本体のロジック ---
+
+const newTodoTextarea = document.getElementById("newTodo");
+newTodoTextarea.addEventListener("input", () => {
+    newTodoTextarea.style.height = "auto";
+    newTodoTextarea.style.height = newTodoTextarea.scrollHeight + "px";
 });
 
-/* 追加 */
-
-function addTodo(){
-
-if(!textarea.value.trim()) return;
-
-todos.push({
-
-text:textarea.value,
-
-checked:false,
-
-category:
-document.getElementById("category").value
-
-});
-
-textarea.value="";
-textarea.style.height="auto";
-
-save();
-render();
-
+function addTodo() {
+    if (!newTodoTextarea.value.trim()) return;
+    todos.push({
+        text: newTodoTextarea.value,
+        checked: false,
+        category: document.getElementById("categorySelect").value
+    });
+    newTodoTextarea.value = "";
+    newTodoTextarea.style.height = "auto";
+    save();
+    render();
 }
 
-/* 描画 */
-
-function render(){
-
-const filter=
-document.getElementById("filterCategory").value;
-
-renderList("todoList",todos,filter);
-renderList("doneList",dones,filter);
-
+function render() {
+    const filter = document.getElementById("filterCategory").value;
+    renderList("todoList", todos, filter);
+    renderList("doneList", dones, filter);
 }
 
-function renderList(id,list,filter){
+function renderList(id, list, filter) {
+    const container = document.getElementById(id);
+    container.innerHTML = "";
 
-const container=
-document.getElementById(id);
+    list.filter(item => (filter === "all" || item.category === filter))
+        .forEach(item => {
+            const card = document.createElement("div");
+            card.className = "todo-card";
+            
+            // カテゴリに応じたボーダー色を設定
+            if (item.category) {
+                const colorIdx = categories.indexOf(item.category) % COLORS.length;
+                card.style.borderLeftColor = COLORS[colorIdx] || '#ccc';
+            }
 
-container.innerHTML="";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = item.checked;
+            checkbox.style.marginTop = "4px";
+            checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
 
-list
-.filter(item=>{
+            const textDiv = document.createElement("div");
+            textDiv.className = "todo-text";
+            const catSpan = item.category ? `<span class="cat-label">${item.category}</span>` : "";
+            textDiv.innerHTML = catSpan + item.text;
 
-if(filter==="all") return true;
+            textDiv.ondblclick = () => startEdit(textDiv, item);
 
-return item.category===filter;
-
-})
-.forEach(item=>{
-
-const card=document.createElement("div");
-
-card.className=
-"todo-card cat-"+item.category;
-
-/* checkbox */
-
-const checkbox=document.createElement("input");
-
-checkbox.type="checkbox";
-
-checkbox.checked=item.checked;
-
-checkbox.onchange=()=>{
-
-item.checked=checkbox.checked;
-
-save();
-
-};
-
-/* text */
-
-const text=document.createElement("div");
-
-text.className="todo-text";
-
-text.textContent=item.text;
-
-/* 編集 */
-
-text.ondblclick=()=>{
-
-startEdit(text,item);
-
-};
-
-/* スマホ */
-
-let tapCount=0;
-
-text.onclick=()=>{
-
-tapCount++;
-
-setTimeout(()=>{
-
-if(tapCount===2){
-
-startEdit(text,item);
-
+            card.appendChild(checkbox);
+            card.appendChild(textDiv);
+            container.appendChild(card);
+        });
 }
 
-tapCount=0;
+function startEdit(textDiv, item) {
+    const editArea = document.createElement("textarea");
+    editArea.className = "edit-textarea";
+    editArea.value = item.text;
+    textDiv.replaceWith(editArea);
+    editArea.focus();
+    editArea.style.height = editArea.scrollHeight + "px";
 
-},250);
-
-};
-
-card.appendChild(checkbox);
-card.appendChild(text);
-
-container.appendChild(card);
-
-});
-
+    editArea.addEventListener("blur", () => {
+        item.text = editArea.value;
+        save();
+        render();
+    });
 }
 
-/* 編集開始 */
-
-function startEdit(textDiv,item){
-
-const textarea=document.createElement("textarea");
-
-textarea.className="edit-textarea";
-
-textarea.value=item.text;
-
-textDiv.replaceWith(textarea);
-
-textarea.focus();
-
-/* 自動拡張 */
-
-textarea.style.height="auto";
-
-textarea.style.height=
-textarea.scrollHeight+"px";
-
-textarea.addEventListener("input",()=>{
-
-textarea.style.height="auto";
-
-textarea.style.height=
-textarea.scrollHeight+"px";
-
-});
-
-/* 保存 */
-
-textarea.addEventListener("blur",()=>{
-
-item.text=textarea.value;
-
-save();
-render();
-
-});
-
+function completeChecked() {
+    const remain = [];
+    todos.forEach(i => {
+        if (i.checked) { i.checked = false; dones.push(i); }
+        else { remain.push(i); }
+    });
+    todos = remain;
+    save();
+    render();
 }
 
-/* 完了 */
-
-function completeChecked(){
-
-const remain=[];
-
-todos.forEach(i=>{
-
-if(i.checked){
-
-i.checked=false;
-
-dones.push(i);
-
-}else{
-
-remain.push(i);
-
+function deleteChecked(type) {
+    if (type === "todo") todos = todos.filter(i => !i.checked);
+    else dones = dones.filter(i => !i.checked);
+    save();
+    render();
 }
 
-});
-
-todos=remain;
-
-save();
-render();
-
+function clearChecks(type) {
+    let list = type === "todo" ? todos : dones;
+    list.forEach(i => i.checked = false);
+    save();
+    render();
 }
 
-/* 削除 */
-
-function deleteChecked(type){
-
-if(type==="todo"){
-
-todos=
-todos.filter(i=>!i.checked);
-
-}
-
-if(type==="done"){
-
-dones=
-dones.filter(i=>!i.checked);
-
-}
-
-save();
-render();
-
-}
-
-/* 解除 */
-
-function clearChecks(type){
-
-let list=
-type==="todo"?todos:dones;
-
-list.forEach(i=>i.checked=false);
-
-save();
-
-}
-
-load();
-
+// 起動
+init();
 </script>
-
 </body>
 </html>
