@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト - 全選択機能付</title>
+<title>Todoリスト - 複数復元機能付</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
 body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:16px; color: #333; }
@@ -14,7 +14,6 @@ body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:
 .section-header { font-size:18px; font-weight:500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .section-divider { height:1px; background:#e0e0e0; margin-bottom:12px; }
 
-/* 全選択ラベルのスタイル */
 .select-all-label { font-size: 13px; color: #666; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
 textarea, input[type="text"], input[type="date"], select { 
@@ -28,6 +27,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .btn-primary {background:#673ab7;color:white;}
 .btn-red {background:#d93025;color:white;}
 .btn-green {background:#188038;color:white;}
+.btn-blue {background:#1a73e8;color:white;} /* 戻すボタン用 */
 .btn-gray {background:#9aa0a6;color:white;}
 .btn-sm { height: 32px; padding: 0 12px; margin-top: 0; font-size: 13px; }
 
@@ -91,6 +91,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
         <div id="doneList" class="todo-list"></div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
             <button class="btn-red" onclick="deleteChecked('done')">削除</button>
+            <button class="btn-blue" onclick="restoreChecked()">Todoに戻す</button>
         </div>
     </div>
 
@@ -135,20 +136,16 @@ function save() {
     localStorage.setItem("categories", JSON.stringify(categories));
 }
 
-// --- 一括操作ロジック ---
+// --- 一括選択操作 ---
 function toggleAll(type, isChecked) {
     const filter = document.getElementById("filterCategory").value;
     let list = (type === 'todo') ? todos : dones;
-    
-    // 現在フィルタリングされている項目のみを対象にする
     list.forEach(item => {
         if (filter === "all" || item.category === filter) {
             item.checked = isChecked;
         }
     });
-    
-    save();
-    render();
+    save(); render();
 }
 
 // --- カテゴリ管理 ---
@@ -199,7 +196,7 @@ function updateSelectOptions() {
     selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
 }
 
-// --- Todo操作 ---
+// --- Todo本体操作 ---
 const textarea = document.getElementById("newTodo");
 textarea.addEventListener("input", () => {
     textarea.style.height = "auto";
@@ -232,7 +229,7 @@ function renderList(id, list, filter, selectAllId) {
 
     let filteredList = list.filter(item => (filter === "all" || item.category === filter));
 
-    // ソート
+    // ソート（期限が近い順、期限なしは後ろ）
     filteredList.sort((a, b) => {
         if (!a.deadline && b.deadline) return 1;
         if (a.deadline && !b.deadline) return -1;
@@ -240,7 +237,7 @@ function renderList(id, list, filter, selectAllId) {
         return a.deadline.localeCompare(b.deadline);
     });
 
-    // 全選択チェックボックスの状態更新
+    // 全選択チェックボックスの状態を現在の表示内容に合わせる
     const selectAllCheckbox = document.getElementById(selectAllId);
     if (filteredList.length > 0) {
         selectAllCheckbox.checked = filteredList.every(item => item.checked);
@@ -283,35 +280,27 @@ function renderList(id, list, filter, selectAllId) {
 function startEdit(container, item) {
     const editBox = document.createElement("div");
     editBox.className = "edit-container";
-
     const editTxt = document.createElement("textarea");
     editTxt.value = item.text;
-    
     const editCat = document.createElement("select");
     let catOpts = `<option value="">カテゴリなし</option>`;
     categories.forEach(c => catOpts += `<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`);
     editCat.innerHTML = catOpts;
-
     const editDate = document.createElement("input");
     editDate.type = "date";
     editDate.value = item.deadline || "";
-
     editBox.append(editTxt, editCat, editDate);
     container.replaceWith(editBox);
     editTxt.focus();
-
     const saveEdit = () => {
         item.text = editTxt.value;
         item.category = editCat.value;
         item.deadline = editDate.value;
         save(); render();
     };
-
     [editTxt, editCat, editDate].forEach(el => {
         el.addEventListener("blur", () => {
-            setTimeout(() => {
-                if (!editBox.contains(document.activeElement)) saveEdit();
-            }, 100);
+            setTimeout(() => { if (!editBox.contains(document.activeElement)) saveEdit(); }, 100);
         });
     });
 }
@@ -328,7 +317,28 @@ function deleteChecked(type) {
     save(); render();
 }
 
-// --- バックアップ ---
+// チェックを入れた完了済み項目をTodoリストに戻す
+function restoreChecked() {
+    const remain = [];
+    let count = 0;
+    dones.forEach(i => {
+        if (i.checked) { 
+            i.checked = false; // 未完了に戻すのでチェックは外す
+            todos.push(i);
+            count++;
+        } else {
+            remain.push(i);
+        }
+    });
+    if (count === 0) {
+        alert("戻したい項目にチェックを入れてください。");
+        return;
+    }
+    dones = remain;
+    save(); render();
+}
+
+// --- バックアップ・復元 ---
 function exportData() {
     const data = { todos, dones, categories, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -346,14 +356,14 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            if (confirm("データを上書き復元しますか？")) {
+            if (confirm("データを現在のバックアップ内容で上書き復元しますか？")) {
                 todos = data.todos || [];
                 dones = data.dones || [];
                 categories = data.categories || [];
                 save(); updateSelectOptions(); renderCategoryManager(); render();
                 alert("復元しました");
             }
-        } catch (err) { alert("失敗しました"); }
+        } catch (err) { alert("正しい形式のJSONファイルを選択してください"); }
     };
     reader.readAsText(file);
 }
