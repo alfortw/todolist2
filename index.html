@@ -6,7 +6,6 @@
 <title>Todoリスト - 期限・カテゴリ管理付</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* 既存のスタイルを継承・拡張 */
 body { margin:0; background:#f0ebf8; font-family:'Roboto',sans-serif; font-size:16px; color: #333; }
 .container { max-width:640px; margin:0 auto; padding:12px; }
 .title-card { background:white; border-top:8px solid #673ab7; border-radius:8px; padding:16px; margin-bottom:12px; }
@@ -33,15 +32,12 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .todo-card { background:white; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
 
-/* ラベル類 */
 .info-row { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .cat-label { font-size: 11px; color: #666; font-weight: 500; background: #eee; padding: 2px 6px; border-radius: 4px; }
 .date-label { font-size: 11px; color: #666; }
-.overdue { color: #d93025; font-weight: bold; } /* 期限切れ表示 */
+.overdue { color: #d93025; font-weight: bold; }
 
-/* 編集モード */
 .edit-container { flex: 1; display: flex; flex-direction: column; gap: 8px; background: #f9f9f9; padding: 8px; border-radius: 4px; }
-
 .category-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .category-item input { flex: 1; }
 </style>
@@ -73,7 +69,6 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
             <button class="btn-red" onclick="deleteChecked('todo')">削除</button>
             <button class="btn-green" onclick="completeChecked()">完了</button>
-            <button class="btn-gray" onclick="clearChecks('todo')">解除</button>
         </div>
     </div>
 
@@ -83,7 +78,6 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
         <div id="doneList" class="todo-list"></div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
             <button class="btn-red" onclick="deleteChecked('done')">削除</button>
-            <button class="btn-gray" onclick="clearChecks('done')">解除</button>
         </div>
     </div>
 
@@ -93,6 +87,16 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
         <div style="margin-top: 15px; display: flex; gap: 8px; align-items: flex-end;">
             <input type="text" id="newCategoryName" placeholder="新規カテゴリ名">
             <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-header">バックアップ・復元</div>
+        <div class="section-divider"></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-gray btn-sm" onclick="exportData()">データを保存(JSON)</button>
+            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">ファイルから復元</button>
+            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
         </div>
     </div>
 </div>
@@ -116,6 +120,8 @@ function save() {
     localStorage.setItem("todos", JSON.stringify(todos));
     localStorage.setItem("dones", JSON.stringify(dones));
     localStorage.setItem("categories", JSON.stringify(categories));
+    // 内部的な予備バックアップ
+    localStorage.setItem("todo_backup_temp", JSON.stringify({todos, dones, categories}));
 }
 
 // --- カテゴリ管理 ---
@@ -179,7 +185,7 @@ function addTodo() {
         text: textarea.value,
         checked: false,
         category: document.getElementById("categorySelect").value,
-        deadline: document.getElementById("deadlineInput").value // 期限の保存
+        deadline: document.getElementById("deadlineInput").value
     });
     textarea.value = "";
     document.getElementById("deadlineInput").value = "";
@@ -197,38 +203,46 @@ function renderList(id, list, filter) {
     container.innerHTML = "";
     const today = new Date().toISOString().split('T')[0];
 
-    list.filter(item => (filter === "all" || item.category === filter))
-        .forEach(item => {
-            const card = document.createElement("div");
-            card.className = "todo-card";
-            if (item.category) {
-                const idx = categories.indexOf(item.category) % COLORS.length;
-                card.style.borderLeftColor = COLORS[idx] || '#ccc';
-            }
+    let filteredList = list.filter(item => (filter === "all" || item.category === filter));
 
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox"; checkbox.checked = item.checked;
-            checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
+    // 期限が近い順にソート
+    filteredList.sort((a, b) => {
+        if (!a.deadline && b.deadline) return 1;
+        if (a.deadline && !b.deadline) return -1;
+        if (!a.deadline && !b.deadline) return 0;
+        return a.deadline.localeCompare(b.deadline);
+    });
 
-            const content = document.createElement("div");
-            content.className = "todo-text";
+    filteredList.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "todo-card";
+        if (item.category) {
+            const idx = categories.indexOf(item.category) % COLORS.length;
+            card.style.borderLeftColor = COLORS[idx] || '#ccc';
+        }
 
-            // 期限・カテゴリのラベル表示
-            let infoHtml = `<div class="info-row">`;
-            if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
-            if (item.deadline) {
-                const isOverdue = item.deadline < today && id === "todoList";
-                infoHtml += `<span class="date-label ${isOverdue ? 'overdue' : ''}">📅 ${item.deadline}${isOverdue ? ' (期限切れ)' : ''}</span>`;
-            }
-            infoHtml += `</div>`;
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox"; checkbox.checked = item.checked;
+        checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
 
-            content.innerHTML = infoHtml + `<span>${item.text}</span>`;
-            content.ondblclick = () => startEdit(content, item);
+        const content = document.createElement("div");
+        content.className = "todo-text";
 
-            card.appendChild(checkbox);
-            card.appendChild(content);
-            container.appendChild(card);
-        });
+        let infoHtml = `<div class="info-row">`;
+        if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
+        if (item.deadline) {
+            const isOverdue = item.deadline < today && id === "todoList";
+            infoHtml += `<span class="date-label ${isOverdue ? 'overdue' : ''}">📅 ${item.deadline}${isOverdue ? ' (期限切れ)' : ''}</span>`;
+        }
+        infoHtml += `</div>`;
+
+        content.innerHTML = infoHtml + `<span>${item.text}</span>`;
+        content.ondblclick = () => startEdit(content, item);
+
+        card.appendChild(checkbox);
+        card.appendChild(content);
+        container.appendChild(card);
+    });
 }
 
 function startEdit(container, item) {
@@ -258,7 +272,6 @@ function startEdit(container, item) {
         save(); render();
     };
 
-    // 簡易的な保存トリガー（いずれかの要素からフォーカスが外れたら少し待って判定）
     [editTxt, editCat, editDate].forEach(el => {
         el.addEventListener("blur", () => {
             setTimeout(() => {
@@ -280,66 +293,34 @@ function deleteChecked(type) {
     save(); render();
 }
 
-function clearChecks(type) {
-    let list = type === "todo" ? todos : dones;
-    list.forEach(i => i.checked = false);
-    save(); render();
+// --- バックアップ関連 ---
+function exportData() {
+    const data = { todos, dones, categories, exportDate: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url; a.download = `todo-backup-${timestamp}.json`; a.click();
+    URL.revokeObjectURL(url);
 }
 
-/* --- 描画関数（ソート機能付き） --- */
-function renderList(id, list, filter) {
-    const container = document.getElementById(id);
-    container.innerHTML = "";
-    const today = new Date().toISOString().split('T')[0];
-
-    // 1. フィルターを適用
-    let filteredList = list.filter(item => (filter === "all" || item.category === filter));
-
-    // 2. ソート（期限が近い順）
-    filteredList.sort((a, b) => {
-        // 片方にしか期限がない場合、期限がある方を上にする
-        if (!a.deadline && b.deadline) return 1;
-        if (a.deadline && !b.deadline) return -1;
-        if (!a.deadline && !b.deadline) return 0;
-        
-        // 両方に期限がある場合、日付で比較
-        return a.deadline.localeCompare(b.deadline);
-    });
-
-    // 3. 描画
-    filteredList.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "todo-card";
-        
-        // カテゴリに応じたボーダー
-        if (item.category) {
-            const idx = categories.indexOf(item.category) % COLORS.length;
-            card.style.borderLeftColor = COLORS[idx] || '#ccc';
-        }
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox"; checkbox.checked = item.checked;
-        checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
-
-        const content = document.createElement("div");
-        content.className = "todo-text";
-
-        // 期限・カテゴリのラベル表示
-        let infoHtml = `<div class="info-row">`;
-        if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
-        if (item.deadline) {
-            const isOverdue = item.deadline < today && id === "todoList";
-            infoHtml += `<span class="date-label ${isOverdue ? 'overdue' : ''}">📅 ${item.deadline}${isOverdue ? ' (期限切れ)' : ''}</span>`;
-        }
-        infoHtml += `</div>`;
-
-        content.innerHTML = infoHtml + `<span>${item.text}</span>`;
-        content.ondblclick = () => startEdit(content, item);
-
-        card.appendChild(checkbox);
-        card.appendChild(content);
-        container.appendChild(card);
-    });
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (confirm("データを上書き復元しますか？")) {
+                todos = data.todos || [];
+                dones = data.dones || [];
+                categories = data.categories || [];
+                save(); updateSelectOptions(); renderCategoryManager(); render();
+                alert("復元しました");
+            }
+        } catch (err) { alert("失敗しました"); }
+    };
+    reader.readAsText(file);
 }
 
 init();
