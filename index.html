@@ -44,6 +44,19 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .category-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .category-item input { flex: 1; }
 </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#673ab7">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<script>
+// Service Workerの登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('Service Worker Registered');
+  });
+}
+</script>
 </head>
 <body>
 
