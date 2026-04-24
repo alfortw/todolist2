@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト Pro+ Custom</title>
+<title>Todoリスト Pro+ CSV連携版</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -61,7 +61,6 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 
 .invisible { visibility: hidden; pointer-events: none; }
 
-/* カテゴリ一覧のスタイル修正 */
 .category-item { display:flex; gap:8px; margin-bottom:12px; align-items:center; }
 .category-item input { flex:1; font-size: 15px; }
 .category-controls { display: flex; align-items: center; gap: 4px; }
@@ -149,9 +148,18 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
     <div class="section-card" style="margin-top: 24px; border-top: 1px dashed var(--border-color); background: transparent; box-shadow: none;">
         <div class="section-header" style="font-size: 14px; opacity: 0.7;">バックアップと復元</div>
+        
+        <p style="font-size: 12px; color: var(--sub-text); margin-bottom: 8px;">
+            ※スプレッドシートで一括編集したい場合は「CSV」を使用してください。
+        </p>
+        
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-gray btn-sm" onclick="exportData()">データを保存(JSON)</button>
-            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">ファイルから復元</button>
+            <button class="btn-green btn-sm" onclick="exportCSV()">CSVを保存(スプレッドシート用)</button>
+            <button class="btn-green btn-sm" onclick="document.getElementById('importCSVFile').click()">CSVから復元</button>
+            <input type="file" id="importCSVFile" style="display:none" accept=".csv" onchange="importCSV(event)">
+            
+            <button class="btn-gray btn-sm" onclick="exportData()">全データ保存(JSON)</button>
+            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">JSONから復元</button>
             <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
         </div>
     </div>
@@ -184,24 +192,11 @@ function toggleDarkMode() {
     localStorage.setItem("darkMode", isDark ? "enabled" : "disabled");
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(() => console.log('SW Registered'));
-}
-
-function autoResize(el) {
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-}
-[document.getElementById("newTodo"), document.getElementById("newMemo")].forEach(el => {
-    el.addEventListener("input", () => autoResize(el));
-});
-
 function addTodo() {
     const textEl = document.getElementById("newTodo");
     const memoEl = document.getElementById("newMemo");
     const starEl = document.getElementById("isImportant");
     if (!textEl.value.trim()) return;
-    
     todos.push({
         text: textEl.value,
         memo: memoEl.value,
@@ -210,9 +205,7 @@ function addTodo() {
         category: document.getElementById("categorySelect").value,
         deadline: document.getElementById("deadlineInput").value
     });
-    
     textEl.value = ""; memoEl.value = ""; starEl.checked = false;
-    textEl.style.height = "auto"; memoEl.style.height = "auto";
     save(); render();
 }
 
@@ -264,86 +257,21 @@ function renderList(id, filteredList, selectAllId) {
         let starHtml = item.important ? `<span class="star">⭐</span>` : "";
         let memoHtml = item.memo ? `<span class="todo-memo-text">${item.memo.replace(/\n/g, '<br>')}</span>` : "";
         content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${item.text}</span>` + memoHtml;
-        content.ondblclick = () => startEdit(content, item);
         card.appendChild(checkbox);
         card.appendChild(content);
         container.appendChild(card);
     });
 }
 
-function startEdit(contentArea, item) {
-    const editBox = document.createElement("div");
-    editBox.className = "edit-container";
-    const editTxt = document.createElement("textarea");
-    editTxt.value = item.text;
-    const editMemo = document.createElement("textarea");
-    editMemo.style.fontSize = "13px";
-    editMemo.value = item.memo || "";
-    const editImp = document.createElement("label");
-    editImp.innerHTML = `<input type="checkbox" ${item.important?'checked':''}> ⭐重要`;
-    const editCat = document.createElement("select");
-    let catOpts = `<option value="">なし</option>`;
-    categories.forEach(c => catOpts += `<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`);
-    editCat.innerHTML = catOpts;
-    const editDate = document.createElement("input");
-    editDate.type = "date"; editDate.value = item.deadline || "";
-    editBox.append(editTxt, editMemo, editImp, editCat, editDate);
-    contentArea.replaceWith(editBox);
-    editTxt.focus();
-    const saveEdit = () => {
-        item.text = editTxt.value; item.memo = editMemo.value; item.important = editImp.querySelector('input').checked;
-        item.category = editCat.value; item.deadline = editDate.value;
-        save(); render();
-    };
-    [editTxt, editMemo, editCat, editDate, editImp].forEach(el => {
-        el.addEventListener("blur", () => {
-            setTimeout(() => { if (!editBox.contains(document.activeElement)) saveEdit(); }, 200);
-        }, true);
-    });
-}
-
-function toggleAll(type, isChecked) {
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const filter = document.getElementById("filterCategory").value;
-    let list = (type === 'todo') ? todos : dones;
-    list.forEach(item => {
-        if ((filter === "all" || item.category === filter) && 
-            (item.text.toLowerCase().includes(search) || (item.memo && item.memo.toLowerCase().includes(search)))) {
-            item.checked = isChecked;
-        }
-    });
-    save(); render();
-}
-
-function completeChecked() {
-    const remain = [];
-    todos.forEach(i => { if (i.checked) { i.checked = false; dones.push(i); } else remain.push(i); });
-    todos = remain; save(); render();
-}
-
-function restoreChecked() {
-    const remain = [];
-    dones.forEach(i => { if (i.checked) { i.checked = false; todos.push(i); } else remain.push(i); });
-    dones = remain; save(); render();
-}
-
-function deleteChecked(type) {
-    if (type === "todo") todos = todos.filter(i => !i.checked);
-    else dones = dones.filter(i => !i.checked);
-    save(); render();
-}
-
-// --- カテゴリ管理（右側配置 & 押し間違い防止版） ---
+// --- カテゴリ管理 ---
 function renderCategoryManager() {
     const container = document.getElementById("categoryManager");
     container.innerHTML = "";
     categories.forEach((cat, index) => {
         const div = document.createElement("div");
         div.className = "category-item";
-        
         const upBtnClass = (index === 0) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
         const downBtnClass = (index === categories.length - 1) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
-
         div.innerHTML = `
             <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
             <div class="category-controls">
@@ -368,10 +296,7 @@ function moveCategory(index, direction) {
 function addCategory() {
     const input = document.getElementById("newCategoryName");
     const newName = input.value.trim();
-    if (newName) {
-        categories.unshift(newName);
-        input.value = ""; save(); updateSelectOptions(); renderCategoryManager(); render();
-    }
+    if (newName) { categories.unshift(newName); input.value = ""; save(); updateSelectOptions(); renderCategoryManager(); render(); }
 }
 
 function editCategory(index, newName) {
@@ -397,11 +322,84 @@ function updateSelectOptions() {
     selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
 }
 
+// --- CSV連携機能 ---
+
+function exportCSV() {
+    // ヘッダー
+    let csvContent = "状態,タイトル,メモ,カテゴリ,期限,重要度(1=重要)\n";
+    
+    const allData = [
+        ...todos.map(t => ({...t, status: "未完了"})),
+        ...dones.map(t => ({...t, status: "完了済み"}))
+    ];
+    
+    allData.forEach(item => {
+        // カンマや改行が含まれる場合に備えてダブルクォーテーションで囲む
+        const row = [
+            item.status,
+            `"${item.text.replace(/"/g, '""')}"`,
+            `"${(item.memo || "").replace(/"/g, '""')}"`,
+            `"${(item.category || "").replace(/"/g, '""')}"`,
+            item.deadline || "",
+            item.important ? "1" : "0"
+        ].join(",");
+        csvContent += row + "\n";
+    });
+
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excelの文字化け防止
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = "todo_list.csv"; a.click();
+}
+
+function importCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const content = e.target.result;
+        const lines = content.split("\n");
+        const newTodos = [];
+        const newDones = [];
+        
+        // 1行目はヘッダーなのでスキップ
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            
+            // シンプルなカンマ分割（高度なクォート処理を簡易化）
+            const parts = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            if (!parts || parts.length < 2) continue;
+
+            const clean = (str) => (str || "").replace(/^"|"$/g, '').replace(/""/g, '"');
+            
+            const item = {
+                text: clean(parts[1]),
+                memo: clean(parts[2]),
+                category: clean(parts[3]),
+                deadline: clean(parts[4]),
+                important: clean(parts[5]) === "1",
+                checked: false
+            };
+            
+            if (clean(parts[0]) === "完了済み") newDones.push(item);
+            else newTodos.push(item);
+        }
+        
+        if (confirm("既存のTodoを上書きしてCSVデータを復元しますか？")) {
+            todos = newTodos; dones = newDones; save(); render();
+            alert("CSVからデータを復元しました。");
+        }
+    };
+    reader.readAsText(file);
+}
+
+// --- JSONバックアップ（カテゴリ等を含む完全バックアップ用） ---
 function exportData() {
-    const data = { todos, dones, categories, exportDate: new Date().toISOString() };
+    const data = { todos, dones, categories };
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `todo-pro-backup.json`; a.click();
+    a.href = URL.createObjectURL(blob); a.download = `todo-pro-full.json`; a.click();
 }
 
 function importData(event) {
@@ -413,10 +411,34 @@ function importData(event) {
             const data = JSON.parse(e.target.result);
             todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
             save(); updateSelectOptions(); renderCategoryManager(); render();
-            alert("復元完了しました。");
+            alert("JSONから復元しました。");
         } catch (err) { alert("形式が不正です。"); }
     };
     reader.readAsText(file);
+}
+
+function toggleAll(type, isChecked) {
+    let list = (type === 'todo') ? todos : dones;
+    list.forEach(item => item.checked = isChecked);
+    save(); render();
+}
+
+function completeChecked() {
+    const remain = [];
+    todos.forEach(i => { if (i.checked) { i.checked = false; dones.push(i); } else remain.push(i); });
+    todos = remain; save(); render();
+}
+
+function restoreChecked() {
+    const remain = [];
+    dones.forEach(i => { if (i.checked) { i.checked = false; todos.push(i); } else remain.push(i); });
+    dones = remain; save(); render();
+}
+
+function deleteChecked(type) {
+    if (type === "todo") todos = todos.filter(i => !i.checked);
+    else dones = dones.filter(i => !i.checked);
+    save(); render();
 }
 
 init();
