@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト Pro+ レイアウト調整版</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline';">
+
+<title>Todoリスト Pro+ Secure版</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -87,7 +89,7 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
 <div class="container">
     <div class="title-card">
-        <h1>Todo Pro+</h1>
+        <h1>Todo Pro+ Secure</h1>
         <button class="btn-sm btn-gray" onclick="toggleDarkMode()">🌙 Mode</button>
     </div>
 
@@ -155,14 +157,22 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
             <button class="btn-green btn-sm" onclick="exportCSV()">CSVを保存</button>
             <button class="btn-green btn-sm" onclick="document.getElementById('importCSVFile').click()">CSVから復元</button>
             <input type="file" id="importCSVFile" style="display:none" accept=".csv" onchange="importCSV(event)">
-            <button class="btn-gray btn-sm" onclick="exportData()">全データ保存(JSON)</button>
-            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">JSONから復元</button>
+            <button class="btn-gray btn-sm" onclick="exportData()">JSON保存</button>
+            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">JSON復元</button>
             <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
         </div>
     </div>
 </div>
 
 <script>
+// セキュリティ対策2: サニタイズ関数
+function escapeHTML(str) {
+    if (!str) return "";
+    return str.toString().replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+}
+
 let todos = [];
 let dones = [];
 let categories = [];
@@ -172,9 +182,13 @@ let editingType = null;
 const COLORS = ['#1a73e8', '#188038', '#f29900', '#d93025', '#673ab7', '#00acc1', '#e91e63'];
 
 function init() {
-    todos = JSON.parse(localStorage.getItem("todos") || "[]");
-    dones = JSON.parse(localStorage.getItem("dones") || "[]");
-    categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物"]');
+    try {
+        todos = JSON.parse(localStorage.getItem("todos") || "[]");
+        dones = JSON.parse(localStorage.getItem("dones") || "[]");
+        categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物"]');
+    } catch (e) {
+        console.error("Storage load failed", e);
+    }
     if (localStorage.getItem("darkMode") === "enabled") document.body.classList.add("dark-mode");
     updateSelectOptions();
     renderCategoryManager();
@@ -255,8 +269,8 @@ function renderList(id, originalList, filterFunc, selectAllId) {
         if (isEditing) {
             card.innerHTML = `
                 <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
-                    <input type="text" id="edit-text" value="${item.text}">
-                    <textarea id="edit-memo" rows="2" style="font-size:13px; border-bottom:1px dashed #ccc;">${item.memo || ""}</textarea>
+                    <input type="text" id="edit-text" value="${escapeHTML(item.text)}">
+                    <textarea id="edit-memo" rows="2" style="font-size:13px;">${escapeHTML(item.memo || "")}</textarea>
                     <div style="display:flex; gap:8px;">
                         <select id="edit-cat" style="font-size:12px;">${document.getElementById("categorySelect").innerHTML}</select>
                         <input type="date" id="edit-date" value="${item.deadline || ""}" style="font-size:12px;">
@@ -277,16 +291,16 @@ function renderList(id, originalList, filterFunc, selectAllId) {
             content.className = "todo-text";
             
             let infoHtml = `<div class="info-row">`;
-            if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
+            if (item.category) infoHtml += `<span class="cat-label">${escapeHTML(item.category)}</span>`;
             if (item.deadline) {
                 const isOverdue = item.deadline < today && id === "todoList";
-                infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${item.deadline}</span>`;
+                infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${escapeHTML(item.deadline)}</span>`;
             }
             infoHtml += `</div>`;
             
             let starHtml = item.important ? `<span class="star">⭐</span>` : "";
-            let memoHtml = item.memo ? `<span class="todo-memo-text">${item.memo.replace(/\n/g, '<br>')}</span>` : "";
-            content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${item.text}</span>` + memoHtml;
+            let memoHtml = item.memo ? `<span class="todo-memo-text">${escapeHTML(item.memo).replace(/\n/g, '<br>')}</span>` : "";
+            content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${escapeHTML(item.text)}</span>` + memoHtml;
 
             const editBtn = document.createElement("button");
             editBtn.className = "btn-gray btn-sm";
@@ -303,7 +317,9 @@ function renderList(id, originalList, filterFunc, selectAllId) {
 
 function saveEdit(index, type) {
     const list = (type === 'todo') ? todos : dones;
-    list[index].text = document.getElementById("edit-text").value;
+    const textVal = document.getElementById("edit-text").value.trim();
+    if(!textVal) return;
+    list[index].text = textVal;
     list[index].memo = document.getElementById("edit-memo").value;
     list[index].category = document.getElementById("edit-cat").value;
     list[index].deadline = document.getElementById("edit-date").value;
@@ -322,13 +338,11 @@ function renderCategoryManager() {
     categories.forEach((cat, index) => {
         const div = document.createElement("div");
         div.className = "category-item";
-        const upBtnClass = (index === 0) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
-        const downBtnClass = (index === categories.length - 1) ? "btn-gray btn-sm invisible" : "btn-gray btn-sm";
         div.innerHTML = `
-            <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
+            <input type="text" value="${escapeHTML(cat)}" onchange="editCategory(${index}, this.value)">
             <div class="category-controls">
-                <button class="${upBtnClass}" onclick="moveCategory(${index}, -1)">↑</button>
-                <button class="${downBtnClass}" onclick="moveCategory(${index}, 1)">↓</button>
+                <button class="btn-gray btn-sm ${index === 0 ? 'invisible' : ''}" onclick="moveCategory(${index}, -1)">↑</button>
+                <button class="btn-gray btn-sm ${index === categories.length - 1 ? 'invisible' : ''}" onclick="moveCategory(${index}, 1)">↓</button>
                 <button class="btn-delete-cat" onclick="deleteCategory(${index})" title="削除">×</button>
             </div>
         `;
@@ -339,9 +353,7 @@ function renderCategoryManager() {
 function moveCategory(index, direction) {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= categories.length) return;
-    const temp = categories[index];
-    categories[index] = categories[targetIndex];
-    categories[targetIndex] = temp;
+    [categories[index], categories[targetIndex]] = [categories[targetIndex], categories[index]];
     save(); updateSelectOptions(); renderCategoryManager(); render();
 }
 
@@ -369,7 +381,7 @@ function deleteCategory(index) {
 function updateSelectOptions() {
     const selects = [document.getElementById("categorySelect"), document.getElementById("filterCategory")];
     let opts = `<option value="">カテゴリなし</option>`;
-    categories.forEach(c => opts += `<option value="${c}">${c}</option>`);
+    categories.forEach(c => opts += `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`);
     selects[0].innerHTML = opts;
     selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
 }
@@ -383,7 +395,9 @@ function exportCSV() {
     });
     const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "todo_list.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = "todo_list.csv"; a.click();
+    URL.revokeObjectURL(url);
 }
 
 function importCSV(event) {
@@ -402,14 +416,16 @@ function importCSV(event) {
             const item = { text: clean(parts[1]), memo: clean(parts[2]), category: clean(parts[3]), deadline: clean(parts[4]), important: clean(parts[5]) === "1", checked: false };
             if (clean(parts[0]) === "完了済み") nDones.push(item); else nTodos.push(item);
         }
-        if (confirm("データを上書きしますか？")) { todos = nTodos; dones = nDones; save(); render(); }
+        if (confirm("既存データを上書きして復元しますか？")) { todos = nTodos; dones = nDones; save(); render(); }
     };
     reader.readAsText(file);
 }
 
 function exportData() {
     const blob = new Blob([JSON.stringify({ todos, dones, categories }, null, 2)], {type: 'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `todo-backup.json`; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `todo-backup.json`; a.click();
+    URL.revokeObjectURL(url);
 }
 
 function importData(event) {
@@ -421,7 +437,7 @@ function importData(event) {
             const data = JSON.parse(e.target.result);
             todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
             save(); updateSelectOptions(); renderCategoryManager(); render();
-        } catch (err) { alert("失敗しました"); }
+        } catch (err) { alert("JSON形式が正しくありません。"); }
     };
     reader.readAsText(file);
 }
@@ -448,6 +464,12 @@ function deleteChecked(type) {
     if (type === "todo") todos = todos.filter(i => !i.checked);
     else dones = dones.filter(i => !i.checked);
     save(); render();
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
+    });
 }
 
 init();
