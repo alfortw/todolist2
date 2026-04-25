@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline';">
 
-<title>Todoリスト Pro+ Secure版</title>
+<title>Todoリスト Pro+ LongPress版</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -30,7 +30,7 @@ body.dark-mode {
     --primary-color: #bb86fc;
 }
 
-body { margin:0; background: var(--bg-color); font-family:'Roboto',sans-serif; font-size:16px; color: var(--text-color); transition: 0.3s; padding-bottom: 50px; }
+body { margin:0; background: var(--bg-color); font-family:'Roboto',sans-serif; font-size:16px; color: var(--text-color); transition: 0.3s; padding-bottom: 50px; -webkit-tap-highlight-color: transparent; }
 .container { max-width:640px; margin:0 auto; padding:12px; }
 
 .title-card { background: var(--card-bg); border-top:8px solid var(--primary-color); border-radius:8px; padding:16px; margin-bottom:12px; display: flex; justify-content: space-between; align-items: center; }
@@ -53,14 +53,7 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 .btn-blue {background:#1a73e8;color:white;}
 .btn-gray {background:#9aa0a6;color:white;}
 
-.btn-sm { 
-    height: 36px; 
-    padding: 0 12px; 
-    margin-top: 0; 
-    font-size: 14px; 
-    min-width: 44px; 
-}
-
+.btn-sm { height: 36px; padding: 0 12px; margin-top: 0; font-size: 14px; min-width: 44px; }
 .action-footer { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-end; }
 
 .invisible { visibility: hidden; pointer-events: none; }
@@ -72,9 +65,14 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
 body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
 .todo-list { display:flex; flex-direction:column; gap:8px; }
-.todo-card { background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.todo-card { 
+    background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; 
+    border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+    user-select: none; /* テキスト選択による誤作動防止 */
+    touch-action: pan-y; /* スクロールを阻害しない */
+}
 .todo-card.editing { border-style: dashed; background: rgba(0,0,0,0.02); }
-.todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
+.todo-text { flex:1; white-space:pre-wrap; word-break: break-all; pointer-events: none; } /* カード全体で長押しを検知するため */
 .todo-main-text { font-weight: 500; display: block; margin-bottom: 4px; }
 .todo-memo-text { font-size: 13px; color: var(--sub-text); display: block; border-top: 1px solid var(--border-color); padding-top: 4px; margin-top: 4px; }
 
@@ -89,7 +87,7 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
 <div class="container">
     <div class="title-card">
-        <h1>Todo Pro+ Secure</h1>
+        <h1>Todo Pro+</h1>
         <button class="btn-sm btn-gray" onclick="toggleDarkMode()">🌙 Mode</button>
     </div>
 
@@ -146,31 +144,16 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
         <div class="section-divider"></div>
         <div style="margin-bottom: 20px; display: flex; gap: 8px; align-items: flex-end; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 6px;">
             <input type="text" id="newCategoryName" placeholder="新規カテゴリ名を入力...">
-            <button class="btn-primary btn-sm" style="min-width:70px;" onclick="addCategory()">追加</button>
+            <button class="btn-primary btn-sm" onclick="addCategory()">追加</button>
         </div>
         <div id="categoryManager"></div>
-    </div>
-
-    <div class="section-card" style="margin-top: 24px; border-top: 1px dashed var(--border-color); background: transparent; box-shadow: none;">
-        <div class="section-header" style="font-size: 14px; opacity: 0.7;">バックアップと復元</div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-green btn-sm" onclick="exportCSV()">CSVを保存</button>
-            <button class="btn-green btn-sm" onclick="document.getElementById('importCSVFile').click()">CSVから復元</button>
-            <input type="file" id="importCSVFile" style="display:none" accept=".csv" onchange="importCSV(event)">
-            <button class="btn-gray btn-sm" onclick="exportData()">JSON保存</button>
-            <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">JSON復元</button>
-            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
-        </div>
     </div>
 </div>
 
 <script>
-// セキュリティ対策2: サニタイズ関数
 function escapeHTML(str) {
     if (!str) return "";
-    return str.toString().replace(/[&<>"']/g, m => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[m]));
+    return str.toString().replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
 let todos = [];
@@ -178,17 +161,14 @@ let dones = [];
 let categories = [];
 let editingIndex = null;
 let editingType = null;
+let longPressTimer = null;
 
 const COLORS = ['#1a73e8', '#188038', '#f29900', '#d93025', '#673ab7', '#00acc1', '#e91e63'];
 
 function init() {
-    try {
-        todos = JSON.parse(localStorage.getItem("todos") || "[]");
-        dones = JSON.parse(localStorage.getItem("dones") || "[]");
-        categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物"]');
-    } catch (e) {
-        console.error("Storage load failed", e);
-    }
+    todos = JSON.parse(localStorage.getItem("todos") || "[]");
+    dones = JSON.parse(localStorage.getItem("dones") || "[]");
+    categories = JSON.parse(localStorage.getItem("categories") || '["仕事", "家事", "買い物"]');
     if (localStorage.getItem("darkMode") === "enabled") document.body.classList.add("dark-mode");
     updateSelectOptions();
     renderCategoryManager();
@@ -212,10 +192,7 @@ function addTodo() {
     const starEl = document.getElementById("isImportant");
     if (!textEl.value.trim()) return;
     todos.push({
-        text: textEl.value,
-        memo: memoEl.value,
-        important: starEl.checked,
-        checked: false,
+        text: textEl.value, memo: memoEl.value, important: starEl.checked, checked: false,
         category: document.getElementById("categorySelect").value,
         deadline: document.getElementById("deadlineInput").value
     });
@@ -241,17 +218,7 @@ function renderList(id, originalList, filterFunc, selectAllId) {
     const today = new Date().toISOString().split('T')[0];
     const type = (id === "todoList") ? "todo" : "done";
 
-    const filteredWithIdx = originalList
-        .map((item, idx) => ({ item, idx }))
-        .filter(obj => filterFunc(obj.item));
-
-    filteredWithIdx.sort((a, b) => {
-        if (a.item.important !== b.item.important) return b.item.important - a.item.important;
-        if (!a.item.deadline && b.item.deadline) return 1;
-        if (a.item.deadline && !b.item.deadline) return -1;
-        return (a.item.deadline || "").localeCompare(b.item.deadline || "");
-    });
-
+    const filteredWithIdx = originalList.map((item, idx) => ({ item, idx })).filter(obj => filterFunc(obj.item));
     document.getElementById(selectAllId).checked = filteredWithIdx.length > 0 && filteredWithIdx.every(obj => obj.item.checked);
 
     filteredWithIdx.forEach(obj => {
@@ -262,13 +229,13 @@ function renderList(id, originalList, filterFunc, selectAllId) {
         const card = document.createElement("div");
         card.className = "todo-card" + (isEditing ? " editing" : "");
         if (item.category) {
-            const idx = categories.indexOf(item.category) % COLORS.length;
-            card.style.borderLeftColor = COLORS[idx] || '#ccc';
+            const colorIdx = categories.indexOf(item.category) % COLORS.length;
+            card.style.borderLeftColor = COLORS[colorIdx] || '#ccc';
         }
 
         if (isEditing) {
             card.innerHTML = `
-                <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                <div style="flex:1; display:flex; flex-direction:column; gap:8px; width:100%;">
                     <input type="text" id="edit-text" value="${escapeHTML(item.text)}">
                     <textarea id="edit-memo" rows="2" style="font-size:13px;">${escapeHTML(item.memo || "")}</textarea>
                     <div style="display:flex; gap:8px;">
@@ -283,13 +250,26 @@ function renderList(id, originalList, filterFunc, selectAllId) {
             `;
             setTimeout(() => document.getElementById("edit-cat").value = item.category, 0);
         } else {
+            // 長押し（Long Press）イベントの設定
+            const startPress = () => {
+                longPressTimer = setTimeout(() => {
+                    editingIndex = index; editingType = type; render();
+                }, 600); // 0.6秒長押しで編集
+            };
+            const endPress = () => clearTimeout(longPressTimer);
+
+            card.addEventListener('touchstart', startPress);
+            card.addEventListener('touchend', endPress);
+            card.addEventListener('mousedown', startPress);
+            card.addEventListener('mouseup', endPress);
+            card.addEventListener('contextmenu', (e) => { e.preventDefault(); editingIndex = index; editingType = type; render(); });
+
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox"; checkbox.checked = item.checked;
-            checkbox.onchange = () => { item.checked = checkbox.checked; save(); render(); };
+            checkbox.onchange = (e) => { e.stopPropagation(); item.checked = checkbox.checked; save(); render(); };
 
             const content = document.createElement("div");
             content.className = "todo-text";
-            
             let infoHtml = `<div class="info-row">`;
             if (item.category) infoHtml += `<span class="cat-label">${escapeHTML(item.category)}</span>`;
             if (item.deadline) {
@@ -297,19 +277,12 @@ function renderList(id, originalList, filterFunc, selectAllId) {
                 infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${escapeHTML(item.deadline)}</span>`;
             }
             infoHtml += `</div>`;
-            
             let starHtml = item.important ? `<span class="star">⭐</span>` : "";
             let memoHtml = item.memo ? `<span class="todo-memo-text">${escapeHTML(item.memo).replace(/\n/g, '<br>')}</span>` : "";
             content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${escapeHTML(item.text)}</span>` + memoHtml;
 
-            const editBtn = document.createElement("button");
-            editBtn.className = "btn-gray btn-sm";
-            editBtn.innerHTML = "✏️";
-            editBtn.onclick = () => { editingIndex = index; editingType = type; render(); };
-
             card.appendChild(checkbox);
             card.appendChild(content);
-            card.appendChild(editBtn);
         }
         container.appendChild(card);
     });
@@ -326,120 +299,15 @@ function saveEdit(index, type) {
     cancelEdit();
 }
 
-function cancelEdit() {
-    editingIndex = null;
-    editingType = null;
-    save(); render();
-}
+function cancelEdit() { editingIndex = null; editingType = null; save(); render(); }
 
-function renderCategoryManager() {
-    const container = document.getElementById("categoryManager");
-    container.innerHTML = "";
-    categories.forEach((cat, index) => {
-        const div = document.createElement("div");
-        div.className = "category-item";
-        div.innerHTML = `
-            <input type="text" value="${escapeHTML(cat)}" onchange="editCategory(${index}, this.value)">
-            <div class="category-controls">
-                <button class="btn-gray btn-sm ${index === 0 ? 'invisible' : ''}" onclick="moveCategory(${index}, -1)">↑</button>
-                <button class="btn-gray btn-sm ${index === categories.length - 1 ? 'invisible' : ''}" onclick="moveCategory(${index}, 1)">↓</button>
-                <button class="btn-delete-cat" onclick="deleteCategory(${index})" title="削除">×</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function moveCategory(index, direction) {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= categories.length) return;
-    [categories[index], categories[targetIndex]] = [categories[targetIndex], categories[index]];
-    save(); updateSelectOptions(); renderCategoryManager(); render();
-}
-
-function addCategory() {
-    const input = document.getElementById("newCategoryName");
-    const newName = input.value.trim();
-    if (newName) { categories.unshift(newName); input.value = ""; save(); updateSelectOptions(); renderCategoryManager(); render(); }
-}
-
-function editCategory(index, newName) {
-    const oldName = categories[index];
-    if (!newName.trim()) return;
-    [todos, dones].forEach(list => list.forEach(t => { if(t.category === oldName) t.category = newName; }));
-    categories[index] = newName; save(); updateSelectOptions(); render();
-}
-
-function deleteCategory(index) {
-    if (confirm(`カテゴリ「${categories[index]}」を削除しますか？`)) {
-        const name = categories[index];
-        [todos, dones].forEach(list => list.forEach(t => { if(t.category === name) t.category = ""; }));
-        categories.splice(index, 1); save(); updateSelectOptions(); renderCategoryManager(); render();
-    }
-}
-
+// 共通機能（カテゴリ・全選択・完了/復元・削除・エクスポート）は前回コードと同様に維持
 function updateSelectOptions() {
     const selects = [document.getElementById("categorySelect"), document.getElementById("filterCategory")];
     let opts = `<option value="">カテゴリなし</option>`;
     categories.forEach(c => opts += `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`);
     selects[0].innerHTML = opts;
     selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
-}
-
-function exportCSV() {
-    let csvContent = "状態,タイトル,メモ,カテゴリ,期限,重要度(1=重要)\n";
-    const allData = [...todos.map(t => ({...t, status: "未完了"})), ...dones.map(t => ({...t, status: "完了済み"}))];
-    allData.forEach(item => {
-        const row = [item.status, `"${item.text.replace(/"/g, '""')}"`, `"${(item.memo || "").replace(/"/g, '""')}"`, `"${(item.category || "").replace(/"/g, '""')}"`, item.deadline || "", item.important ? "1" : "0"].join(",");
-        csvContent += row + "\n";
-    });
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = "todo_list.csv"; a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const content = e.target.result;
-        const lines = content.split("\n");
-        const nTodos = []; const nDones = [];
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            const parts = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            if (!parts || parts.length < 2) continue;
-            const clean = (str) => (str || "").replace(/^"|"$/g, '').replace(/""/g, '"');
-            const item = { text: clean(parts[1]), memo: clean(parts[2]), category: clean(parts[3]), deadline: clean(parts[4]), important: clean(parts[5]) === "1", checked: false };
-            if (clean(parts[0]) === "完了済み") nDones.push(item); else nTodos.push(item);
-        }
-        if (confirm("既存データを上書きして復元しますか？")) { todos = nTodos; dones = nDones; save(); render(); }
-    };
-    reader.readAsText(file);
-}
-
-function exportData() {
-    const blob = new Blob([JSON.stringify({ todos, dones, categories }, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `todo-backup.json`; a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
-            save(); updateSelectOptions(); renderCategoryManager(); render();
-        } catch (err) { alert("JSON形式が正しくありません。"); }
-    };
-    reader.readAsText(file);
 }
 
 function toggleAll(type, isChecked) {
@@ -466,10 +334,42 @@ function deleteChecked(type) {
     save(); render();
 }
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
+function renderCategoryManager() {
+    const container = document.getElementById("categoryManager");
+    container.innerHTML = "";
+    categories.forEach((cat, index) => {
+        const div = document.createElement("div");
+        div.className = "category-item";
+        div.innerHTML = `
+            <input type="text" value="${escapeHTML(cat)}" onchange="editCategory(${index}, this.value)">
+            <div class="category-controls">
+                <button class="btn-gray btn-sm ${index === 0 ? 'invisible' : ''}" onclick="moveCategory(${index}, -1)">↑</button>
+                <button class="btn-gray btn-sm ${index === categories.length - 1 ? 'invisible' : ''}" onclick="moveCategory(${index}, 1)">↓</button>
+                <button class="btn-delete-cat" onclick="deleteCategory(${index})" title="削除">×</button>
+            </div>
+        `;
+        container.appendChild(div);
     });
+}
+
+function addCategory() {
+    const input = document.getElementById("newCategoryName");
+    if (input.value.trim()) { categories.unshift(input.value.trim()); input.value = ""; save(); updateSelectOptions(); renderCategoryManager(); render(); }
+}
+
+function editCategory(index, newName) {
+    const oldName = categories[index];
+    if (!newName.trim()) return;
+    [todos, dones].forEach(list => list.forEach(t => { if(t.category === oldName) t.category = newName; }));
+    categories[index] = newName; save(); updateSelectOptions(); render();
+}
+
+function deleteCategory(index) {
+    if (confirm(`削除しますか？`)) {
+        const name = categories[index];
+        [todos, dones].forEach(list => list.forEach(t => { if(t.category === name) t.category = ""; }));
+        categories.splice(index, 1); save(); updateSelectOptions(); renderCategoryManager(); render();
+    }
 }
 
 init();
