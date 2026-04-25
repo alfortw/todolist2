@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline';">
 
-<title>Todoリスト Pro+ LongPress版</title>
+<title>Todoリスト Pro+ SmartSort版</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -68,11 +68,11 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 .todo-card { 
     background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; 
     border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
-    user-select: none; /* テキスト選択による誤作動防止 */
-    touch-action: pan-y; /* スクロールを阻害しない */
+    user-select: none;
+    touch-action: pan-y;
 }
 .todo-card.editing { border-style: dashed; background: rgba(0,0,0,0.02); }
-.todo-text { flex:1; white-space:pre-wrap; word-break: break-all; pointer-events: none; } /* カード全体で長押しを検知するため */
+.todo-text { flex:1; white-space:pre-wrap; word-break: break-all; pointer-events: none; }
 .todo-main-text { font-weight: 500; display: block; margin-bottom: 4px; }
 .todo-memo-text { font-size: 13px; color: var(--sub-text); display: block; border-top: 1px solid var(--border-color); padding-top: 4px; margin-top: 4px; }
 
@@ -194,7 +194,8 @@ function addTodo() {
     todos.push({
         text: textEl.value, memo: memoEl.value, important: starEl.checked, checked: false,
         category: document.getElementById("categorySelect").value,
-        deadline: document.getElementById("deadlineInput").value
+        deadline: document.getElementById("deadlineInput").value,
+        createdAt: Date.now()
     });
     textEl.value = ""; memoEl.value = ""; starEl.checked = false;
     save(); render();
@@ -219,6 +220,23 @@ function renderList(id, originalList, filterFunc, selectAllId) {
     const type = (id === "todoList") ? "todo" : "done";
 
     const filteredWithIdx = originalList.map((item, idx) => ({ item, idx })).filter(obj => filterFunc(obj.item));
+
+    // ★重要: ソートロジックの修正
+    filteredWithIdx.sort((a, b) => {
+        // 1. 重要度 (重要が上)
+        if (a.item.important !== b.item.important) return b.item.important - a.item.important;
+        
+        // 2. 期限 (直近が上)
+        if (a.item.deadline || b.item.deadline) {
+            if (!a.item.deadline) return 1;  // aに期限がないならbを優先
+            if (!b.item.deadline) return -1; // bに期限がないならaを優先
+            if (a.item.deadline !== b.item.deadline) return a.item.deadline.localeCompare(b.item.deadline);
+        }
+        
+        // 3. 作成日時 (新しい順)
+        return (b.item.createdAt || 0) - (a.item.createdAt || 0);
+    });
+
     document.getElementById(selectAllId).checked = filteredWithIdx.length > 0 && filteredWithIdx.every(obj => obj.item.checked);
 
     filteredWithIdx.forEach(obj => {
@@ -250,11 +268,10 @@ function renderList(id, originalList, filterFunc, selectAllId) {
             `;
             setTimeout(() => document.getElementById("edit-cat").value = item.category, 0);
         } else {
-            // 長押し（Long Press）イベントの設定
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     editingIndex = index; editingType = type; render();
-                }, 600); // 0.6秒長押しで編集
+                }, 600);
             };
             const endPress = () => clearTimeout(longPressTimer);
 
@@ -301,7 +318,6 @@ function saveEdit(index, type) {
 
 function cancelEdit() { editingIndex = null; editingType = null; save(); render(); }
 
-// 共通機能（カテゴリ・全選択・完了/復元・削除・エクスポート）は前回コードと同様に維持
 function updateSelectOptions() {
     const selects = [document.getElementById("categorySelect"), document.getElementById("filterCategory")];
     let opts = `<option value="">カテゴリなし</option>`;
