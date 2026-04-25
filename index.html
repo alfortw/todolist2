@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Todoリスト Pro+ CSV連携版</title>
+<title>Todoリスト Pro+ レイアウト調整版</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" id="theme-meta" content="#673ab7">
@@ -59,6 +59,8 @@ button { height:44px; padding:0 18px; font-size:15px; border-radius:6px; border:
     min-width: 44px; 
 }
 
+.action-footer { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-end; }
+
 .invisible { visibility: hidden; pointer-events: none; }
 
 .category-item { display:flex; gap:8px; margin-bottom:12px; align-items:center; }
@@ -69,6 +71,7 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
 .todo-list { display:flex; flex-direction:column; gap:8px; }
 .todo-card { background: var(--card-bg); border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start; border-left:6px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.todo-card.editing { border-style: dashed; background: rgba(0,0,0,0.02); }
 .todo-text { flex:1; white-space:pre-wrap; word-break: break-all; }
 .todo-main-text { font-weight: 500; display: block; margin-bottom: 4px; }
 .todo-memo-text { font-size: 13px; color: var(--sub-text); display: block; border-top: 1px solid var(--border-color); padding-top: 4px; margin-top: 4px; }
@@ -77,7 +80,7 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 .info-row { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .cat-label { font-size: 11px; color: #666; font-weight: 500; background: #eee; padding: 2px 6px; border-radius: 4px; }
 
-.edit-container { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; }
+.edit-actions { display: flex; gap: 8px; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -116,9 +119,9 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
         </div>
         <div class="section-divider"></div>
         <div id="todoList" class="todo-list"></div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
-            <button class="btn-red" onclick="deleteChecked('todo')">削除</button>
+        <div class="action-footer">
             <button class="btn-green" onclick="completeChecked()">完了</button>
+            <button class="btn-red" onclick="deleteChecked('todo')">削除</button>
         </div>
     </div>
 
@@ -130,9 +133,9 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
         </div>
         <div class="section-divider"></div>
         <div id="doneList" class="todo-list"></div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
-            <button class="btn-red" onclick="deleteChecked('done')">削除</button>
+        <div class="action-footer">
             <button class="btn-blue" onclick="restoreChecked()">Todoに戻す</button>
+            <button class="btn-red" onclick="deleteChecked('done')">削除</button>
         </div>
     </div>
 
@@ -148,16 +151,10 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 
     <div class="section-card" style="margin-top: 24px; border-top: 1px dashed var(--border-color); background: transparent; box-shadow: none;">
         <div class="section-header" style="font-size: 14px; opacity: 0.7;">バックアップと復元</div>
-        
-        <p style="font-size: 12px; color: var(--sub-text); margin-bottom: 8px;">
-            ※スプレッドシートで一括編集したい場合は「CSV」を使用してください。
-        </p>
-        
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-green btn-sm" onclick="exportCSV()">CSVを保存(スプレッドシート用)</button>
+            <button class="btn-green btn-sm" onclick="exportCSV()">CSVを保存</button>
             <button class="btn-green btn-sm" onclick="document.getElementById('importCSVFile').click()">CSVから復元</button>
             <input type="file" id="importCSVFile" style="display:none" accept=".csv" onchange="importCSV(event)">
-            
             <button class="btn-gray btn-sm" onclick="exportData()">全データ保存(JSON)</button>
             <button class="btn-gray btn-sm" onclick="document.getElementById('importFile').click()">JSONから復元</button>
             <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
@@ -169,6 +166,9 @@ body.dark-mode .btn-delete-cat { background: #333; color: #aaa; }
 let todos = [];
 let dones = [];
 let categories = [];
+let editingIndex = null;
+let editingType = null;
+
 const COLORS = ['#1a73e8', '#188038', '#f29900', '#d93025', '#673ab7', '#00acc1', '#e91e63'];
 
 function init() {
@@ -217,53 +217,105 @@ function render() {
         const matchSearch = (item.text.toLowerCase().includes(search) || (item.memo && item.memo.toLowerCase().includes(search)));
         return matchCat && matchSearch;
     };
-    renderList("todoList", todos.filter(filterFunc), "todoSelectAll");
-    renderList("doneList", dones.filter(filterFunc), "doneSelectAll");
+    renderList("todoList", todos, filterFunc, "todoSelectAll");
+    renderList("doneList", dones, filterFunc, "doneSelectAll");
 }
 
-function renderList(id, filteredList, selectAllId) {
+function renderList(id, originalList, filterFunc, selectAllId) {
     const container = document.getElementById(id);
     container.innerHTML = "";
     const today = new Date().toISOString().split('T')[0];
+    const type = (id === "todoList") ? "todo" : "done";
 
-    filteredList.sort((a, b) => {
-        if (a.important !== b.important) return b.important - a.important;
-        if (!a.deadline && b.deadline) return 1;
-        if (a.deadline && !b.deadline) return -1;
-        return (a.deadline || "").localeCompare(b.deadline || "");
+    const filteredWithIdx = originalList
+        .map((item, idx) => ({ item, idx }))
+        .filter(obj => filterFunc(obj.item));
+
+    filteredWithIdx.sort((a, b) => {
+        if (a.item.important !== b.item.important) return b.item.important - a.item.important;
+        if (!a.item.deadline && b.item.deadline) return 1;
+        if (a.item.deadline && !b.item.deadline) return -1;
+        return (a.item.deadline || "").localeCompare(b.item.deadline || "");
     });
 
-    document.getElementById(selectAllId).checked = filteredList.length > 0 && filteredList.every(item => item.checked);
+    document.getElementById(selectAllId).checked = filteredWithIdx.length > 0 && filteredWithIdx.every(obj => obj.item.checked);
 
-    filteredList.forEach(item => {
+    filteredWithIdx.forEach(obj => {
+        const item = obj.item;
+        const index = obj.idx;
+        const isEditing = (editingIndex === index && editingType === type);
+
         const card = document.createElement("div");
-        card.className = "todo-card";
+        card.className = "todo-card" + (isEditing ? " editing" : "");
         if (item.category) {
             const idx = categories.indexOf(item.category) % COLORS.length;
             card.style.borderLeftColor = COLORS[idx] || '#ccc';
         }
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox"; checkbox.checked = item.checked;
-        checkbox.onchange = () => { item.checked = checkbox.checked; save(); render(); };
-        const content = document.createElement("div");
-        content.className = "todo-text";
-        let infoHtml = `<div class="info-row">`;
-        if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
-        if (item.deadline) {
-            const isOverdue = item.deadline < today && id === "todoList";
-            infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${item.deadline}</span>`;
+
+        if (isEditing) {
+            card.innerHTML = `
+                <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                    <input type="text" id="edit-text" value="${item.text}">
+                    <textarea id="edit-memo" rows="2" style="font-size:13px; border-bottom:1px dashed #ccc;">${item.memo || ""}</textarea>
+                    <div style="display:flex; gap:8px;">
+                        <select id="edit-cat" style="font-size:12px;">${document.getElementById("categorySelect").innerHTML}</select>
+                        <input type="date" id="edit-date" value="${item.deadline || ""}" style="font-size:12px;">
+                    </div>
+                    <div class="edit-actions">
+                        <button class="btn-primary btn-sm" onclick="saveEdit(${index}, '${type}')">保存</button>
+                        <button class="btn-gray btn-sm" onclick="cancelEdit()">戻る</button>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => document.getElementById("edit-cat").value = item.category, 0);
+        } else {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox"; checkbox.checked = item.checked;
+            checkbox.onchange = () => { item.checked = checkbox.checked; save(); render(); };
+
+            const content = document.createElement("div");
+            content.className = "todo-text";
+            
+            let infoHtml = `<div class="info-row">`;
+            if (item.category) infoHtml += `<span class="cat-label">${item.category}</span>`;
+            if (item.deadline) {
+                const isOverdue = item.deadline < today && id === "todoList";
+                infoHtml += `<span style="font-size:11px; ${isOverdue ? 'color:red; font-weight:bold;' : ''}">📅 ${item.deadline}</span>`;
+            }
+            infoHtml += `</div>`;
+            
+            let starHtml = item.important ? `<span class="star">⭐</span>` : "";
+            let memoHtml = item.memo ? `<span class="todo-memo-text">${item.memo.replace(/\n/g, '<br>')}</span>` : "";
+            content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${item.text}</span>` + memoHtml;
+
+            const editBtn = document.createElement("button");
+            editBtn.className = "btn-gray btn-sm";
+            editBtn.innerHTML = "✏️";
+            editBtn.onclick = () => { editingIndex = index; editingType = type; render(); };
+
+            card.appendChild(checkbox);
+            card.appendChild(content);
+            card.appendChild(editBtn);
         }
-        infoHtml += `</div>`;
-        let starHtml = item.important ? `<span class="star">⭐</span>` : "";
-        let memoHtml = item.memo ? `<span class="todo-memo-text">${item.memo.replace(/\n/g, '<br>')}</span>` : "";
-        content.innerHTML = infoHtml + `<span class="todo-main-text">${starHtml}${item.text}</span>` + memoHtml;
-        card.appendChild(checkbox);
-        card.appendChild(content);
         container.appendChild(card);
     });
 }
 
-// --- カテゴリ管理 ---
+function saveEdit(index, type) {
+    const list = (type === 'todo') ? todos : dones;
+    list[index].text = document.getElementById("edit-text").value;
+    list[index].memo = document.getElementById("edit-memo").value;
+    list[index].category = document.getElementById("edit-cat").value;
+    list[index].deadline = document.getElementById("edit-date").value;
+    cancelEdit();
+}
+
+function cancelEdit() {
+    editingIndex = null;
+    editingType = null;
+    save(); render();
+}
+
 function renderCategoryManager() {
     const container = document.getElementById("categoryManager");
     container.innerHTML = "";
@@ -322,35 +374,16 @@ function updateSelectOptions() {
     selects[1].innerHTML = `<option value="all">すべて表示</option>` + opts;
 }
 
-// --- CSV連携機能 ---
-
 function exportCSV() {
-    // ヘッダー
     let csvContent = "状態,タイトル,メモ,カテゴリ,期限,重要度(1=重要)\n";
-    
-    const allData = [
-        ...todos.map(t => ({...t, status: "未完了"})),
-        ...dones.map(t => ({...t, status: "完了済み"}))
-    ];
-    
+    const allData = [...todos.map(t => ({...t, status: "未完了"})), ...dones.map(t => ({...t, status: "完了済み"}))];
     allData.forEach(item => {
-        // カンマや改行が含まれる場合に備えてダブルクォーテーションで囲む
-        const row = [
-            item.status,
-            `"${item.text.replace(/"/g, '""')}"`,
-            `"${(item.memo || "").replace(/"/g, '""')}"`,
-            `"${(item.category || "").replace(/"/g, '""')}"`,
-            item.deadline || "",
-            item.important ? "1" : "0"
-        ].join(",");
+        const row = [item.status, `"${item.text.replace(/"/g, '""')}"`, `"${(item.memo || "").replace(/"/g, '""')}"`, `"${(item.category || "").replace(/"/g, '""')}"`, item.deadline || "", item.important ? "1" : "0"].join(",");
         csvContent += row + "\n";
     });
-
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excelの文字化け防止
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = "todo_list.csv"; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "todo_list.csv"; a.click();
 }
 
 function importCSV(event) {
@@ -360,46 +393,23 @@ function importCSV(event) {
     reader.onload = (e) => {
         const content = e.target.result;
         const lines = content.split("\n");
-        const newTodos = [];
-        const newDones = [];
-        
-        // 1行目はヘッダーなのでスキップ
+        const nTodos = []; const nDones = [];
         for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
-            
-            // シンプルなカンマ分割（高度なクォート処理を簡易化）
             const parts = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
             if (!parts || parts.length < 2) continue;
-
             const clean = (str) => (str || "").replace(/^"|"$/g, '').replace(/""/g, '"');
-            
-            const item = {
-                text: clean(parts[1]),
-                memo: clean(parts[2]),
-                category: clean(parts[3]),
-                deadline: clean(parts[4]),
-                important: clean(parts[5]) === "1",
-                checked: false
-            };
-            
-            if (clean(parts[0]) === "完了済み") newDones.push(item);
-            else newTodos.push(item);
+            const item = { text: clean(parts[1]), memo: clean(parts[2]), category: clean(parts[3]), deadline: clean(parts[4]), important: clean(parts[5]) === "1", checked: false };
+            if (clean(parts[0]) === "完了済み") nDones.push(item); else nTodos.push(item);
         }
-        
-        if (confirm("既存のTodoを上書きしてCSVデータを復元しますか？")) {
-            todos = newTodos; dones = newDones; save(); render();
-            alert("CSVからデータを復元しました。");
-        }
+        if (confirm("データを上書きしますか？")) { todos = nTodos; dones = nDones; save(); render(); }
     };
     reader.readAsText(file);
 }
 
-// --- JSONバックアップ（カテゴリ等を含む完全バックアップ用） ---
 function exportData() {
-    const data = { todos, dones, categories };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `todo-pro-full.json`; a.click();
+    const blob = new Blob([JSON.stringify({ todos, dones, categories }, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `todo-backup.json`; a.click();
 }
 
 function importData(event) {
@@ -411,8 +421,7 @@ function importData(event) {
             const data = JSON.parse(e.target.result);
             todos = data.todos || []; dones = data.dones || []; categories = data.categories || [];
             save(); updateSelectOptions(); renderCategoryManager(); render();
-            alert("JSONから復元しました。");
-        } catch (err) { alert("形式が不正です。"); }
+        } catch (err) { alert("失敗しました"); }
     };
     reader.readAsText(file);
 }
@@ -439,35 +448,6 @@ function deleteChecked(type) {
     if (type === "todo") todos = todos.filter(i => !i.checked);
     else dones = dones.filter(i => !i.checked);
     save(); render();
-}
-
-    // --- Service Worker 登録と更新検知 ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-            // 新しいSWがインストールを待機しているかチェック
-            reg.addEventListener('updatefound', () => {
-                const newWorker = reg.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // 新しいSWが準備できたら通知。OKならリロードして適用
-                        if (confirm('新しいバージョンが利用可能です。更新を適用しますか？')) {
-                            location.reload();
-                        }
-                    }
-                });
-            });
-        }).catch(err => console.log('SW registration failed:', err));
-    });
-
-    // SWが入れ替わった際、ページを自動リロードする（self.skipWaiting対策）
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-        }
-    });
 }
 
 init();
