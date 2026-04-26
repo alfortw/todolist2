@@ -221,19 +221,13 @@ function renderList(id, originalList, filterFunc, selectAllId) {
 
     const filteredWithIdx = originalList.map((item, idx) => ({ item, idx })).filter(obj => filterFunc(obj.item));
 
-    // ★重要: ソートロジックの修正
     filteredWithIdx.sort((a, b) => {
-        // 1. 重要度 (重要が上)
         if (a.item.important !== b.item.important) return b.item.important - a.item.important;
-        
-        // 2. 期限 (直近が上)
         if (a.item.deadline || b.item.deadline) {
-            if (!a.item.deadline) return 1;  // aに期限がないならbを優先
-            if (!b.item.deadline) return -1; // bに期限がないならaを優先
+            if (!a.item.deadline) return 1;
+            if (!b.item.deadline) return -1;
             if (a.item.deadline !== b.item.deadline) return a.item.deadline.localeCompare(b.item.deadline);
         }
-        
-        // 3. 作成日時 (新しい順)
         return (b.item.createdAt || 0) - (a.item.createdAt || 0);
     });
 
@@ -348,6 +342,24 @@ function deleteChecked(type) {
     if (type === "todo") todos = todos.filter(i => !i.checked);
     else dones = dones.filter(i => !i.checked);
     save(); render();
+}
+
+// --- 改修ポイント: moveCategory 関数の追加 ---
+function moveCategory(index, direction) {
+    const targetIndex = index + direction;
+    // 範囲チェック
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+    
+    // 要素の入れ替え
+    const temp = categories[index];
+    categories[index] = categories[targetIndex];
+    categories[targetIndex] = temp;
+    
+    // 保存と再描画
+    save();
+    updateSelectOptions();
+    renderCategoryManager();
+    render(); // Todoカードの左端の色も変わるため
 }
 
 function renderCategoryManager() {
